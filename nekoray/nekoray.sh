@@ -1,3 +1,5 @@
+set -euo pipefail
+
 export CMAKE_PREFIX_PATH=$PWD/build/qt6/build/lib/cmake
 
 pushd build

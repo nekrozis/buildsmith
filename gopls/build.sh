@@ -1,3 +1,5 @@
+set -euo pipefail
+
 mkdir pkgdir
 
 TARBALL="https://github.com/golang/tools/archive/gopls/v${pkgver}.tar.gz"

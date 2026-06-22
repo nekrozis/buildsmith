@@ -1,15 +1,16 @@
-name: build gopls
+name: build lazygit
 
 on:
   workflow_dispatch:
     inputs:
         pkgver:
-          description: gopls version to build
+          description: lazygit version to build
 
 jobs:
   build:
     runs-on: windows-latest
     env:
+      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       CGO_ENABLED: 0
       GOOS: windows
       GOARCH: amd64
@@ -30,11 +31,11 @@ jobs:
           go-version: stable
           cache: false
 
-      - name: build gopls 
-        run: gopls/build.sh
+      - name: build lazygit 
+        run: lazygit/build.sh
       
       - name: upload artifact
         uses: actions/upload-artifact@v7
         with:
-          name: gopls 
-          path: pkgdir/tools-gopls-v${{ github.event.inputs.pkgver }}/gopls/gopls.exe
+          name: lazygit 
+          path: pkgdir/lazygit-${{ github.event.inputs.pkgver }}/lazygit.exe

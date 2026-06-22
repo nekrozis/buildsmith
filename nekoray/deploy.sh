@@ -1,3 +1,5 @@
+set -euo pipefail
+
 mkdir -p deploy/nekoray
 
 pushd deploy/nekoray

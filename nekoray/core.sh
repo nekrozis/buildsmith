@@ -1,3 +1,5 @@
+set -euo pipefail
+
 export CGO_ENABLED=0
 export GOOS=windows
 export GOARCH=amd64

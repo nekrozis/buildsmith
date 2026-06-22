@@ -1,3 +1,5 @@
+set -euo pipefail
+
 pushd build
 git clone https://code.qt.io/qt/qt5.git qt6 -b $QT_VERSION
 mkdir qt6/build

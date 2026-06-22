@@ -1,3 +1,5 @@
+set -euo pipefail
+
 pushd build
 
 mkdir deps
