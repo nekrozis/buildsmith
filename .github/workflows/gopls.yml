@@ -1,0 +1,35 @@
+name: build gopls
+
+on:
+  workflow_dispatch:
+    inputs:
+        pkgver:
+          description: gopls version to build
+
+jobs:
+  build:
+    runs-on: windows-latest
+    env:
+      CGO_ENABLED: 0
+      GOOS: windows
+      GOARCH: amd64
+      GOAMD64: v3
+      GOFLAGS: "-buildvcs=false -trimpath"
+      pkgver: ${{ github.event.inputs.pkgver }}
+    
+    defaults:
+      run:
+        shell: bash
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v7
+
+      - name: build gopls 
+        run: gopls/build.sh
+      
+      - name: upload artifact
+        uses: actions/upload-artifact@v7
+        with:
+          name: gopls 
+          path: pkgdir/tools-gopls-v${{ github.event.inputs.pkgver }}/gopls/gopls.exe

@@ -18,7 +18,7 @@ on:
 
 jobs:
   build:
-    runs-on: windows-2025
+    runs-on: windows-latest
     env:
         CC: gcc.exe
         CXX: g++.exe
@@ -36,6 +36,9 @@ jobs:
     - name: Export ImageVersion
       id: Set-ImageVersion
       run: echo "ImageVersion=$ImageVersion" && echo "ImageVersion=$ImageVersion" >> $GITHUB_OUTPUT
+    
+    - name: Create build dir
+      run: mkdir build 
 
     - name: Restore Protobuf cache
       id: restore-protobuf
@@ -43,7 +46,6 @@ jobs:
       with:
         path: build/deps
         key: protobuf-${{ env.PROTOBUF_VERSION }}-b${{ steps.Set-ImageVersion.outputs.ImageVersion }}
-
 
     - name: Build Protobuf
       if: steps.restore-protobuf.outputs.cache-hit != 'true'
