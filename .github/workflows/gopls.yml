@@ -25,6 +25,10 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v7
 
+      - uses: actions/setup-go@v6
+        with:
+          go-version: stable
+
       - name: build gopls 
         run: gopls/build.sh
       
