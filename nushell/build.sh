@@ -1,9 +1,12 @@
 set -euo pipefail
 
+mkdir pkgdir && pushd pkgdir
+
 git clone --branch ${pkgver} https://github.com/nushell/nushell.git
 
 pushd nushell
 
+rm -rf rust-toolchain.toml 
 
 cat <<EOF >> ./Cargo.toml
 [profile.make]
@@ -21,6 +24,8 @@ rpath = false
 EOF
 
 rm -rf ./.cargo/ && ls -al
+
+export RUSTUP_TOOLCHAIN=stable
 
 cargo fetch --locked --target x86_64-pc-windows-msvc
 
