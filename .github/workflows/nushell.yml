@@ -1,0 +1,34 @@
+name: build nushell 
+
+on: 
+  workflow_dispatch:
+    inputs:
+      pkgver: 
+        description: package version to build 
+
+
+jobs:
+  build:
+    runs-on: windows-latest
+    defaults:
+      run:
+        shell: bash
+    env:
+      RUSTFLAGS: '-C target-cpu=x86-64-v3'
+      CL: '/fp:fast'
+      _CL_: '/arch:AVX2 /O2'
+      _LINK_: '/OPT:REF,ICF'
+      pkgver: ${{ github.event.inputs.pkgver }}
+    
+    steps:
+
+      - uses: actions/checkout@v7
+
+      - name: build nushell 
+        run: nushell/build.sh
+
+      - uses: actions/upload-artifact@v7
+        with:
+          name: nushell
+          path: release/*
+      
