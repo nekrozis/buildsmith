@@ -1,0 +1,38 @@
+name: build aseprite 
+on:
+  workflow_dispatch: 
+    inputs:
+      pkgver:
+        description: aseprite version to build 
+jobs:
+  build:
+    runs-on: windows-latest
+    defaults:
+      run:
+        shell: bash
+    env:
+      pkgver: ${{ github.event.inputs.pkgver }}
+      CL: '/fp:fast'
+      _CL_: '/arch:AVX2 /O2 /GL /MT'
+      _LINK_: '/LTCG /OPT:REF,ICF'
+    
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Locate Visual Studio 
+        run: |
+          VSROOT=$(vswhere -latest -property installationPath)
+          VCVARSALL="$VSROOT\\VC\\Auxiliary\\Build\\vcvarsall.bat"
+          echo "VCVARSALL=$VCVARSALL" >> $GITHUB_ENV
+
+      - name: build aseprite
+        shell: cmd
+        run: |
+          call "%VCVARSALL%" x64
+          bash aseprite/build.sh
+
+      - uses: actions/upload-artifact@v7
+        with:
+          name: aseprite
+          path: pkgdir/release
+
