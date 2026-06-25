@@ -24,7 +24,7 @@ export _LINK_="/LTCG /INCREMENTAL:NO /OPT:REF,ICF /Brepro"
 mkdir build && cd build
 
 cmake -G Ninja \
-    -DCMAKE_BUILD_TYPE:STRING='None' \
+    -DCMAKE_BUILD_TYPE:STRING='Release' \
     -DLAF_BACKEND:STRING='skia' \
     -DENABLE_SENTRY:BOOL='OFF' \
     -DENABLE_NEWS:BOOL='OFF' \
