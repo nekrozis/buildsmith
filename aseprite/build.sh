@@ -25,6 +25,8 @@ export _LINK_="/LTCG /INCREMENTAL:NO /OPT:REF,ICF /Brepro"
 
 mkdir build && cd build
 
+SKIA_ROOT=$(realpath ../../skia)
+
 cmake -G Ninja \
     -DCMAKE_BUILD_TYPE:STRING='None' \
     -DLAF_BACKEND:STRING='skia' \
@@ -32,9 +34,9 @@ cmake -G Ninja \
     -DENABLE_NEWS:BOOL='OFF' \
     -DENABLE_UPDATER:BOOL='OFF' \
     -DENABLE_DRM:BOOL='OFF' \
-    -DSKIA_DIR:PATH='../../skia' \
-    -DSKIA_LIBRARY_DIR:PATH='../../skia/out/Release-x64' \
-    -DSKIA_LIBRARY:PATH='../../skia/out/Release-x64/skia.lib' \
+    -DSKIA_DIR:PATH="$SKIA_ROOT" \
+    -DSKIA_LIBRARY_DIR:PATH="$SKIA_ROOT/out/Release-x64" \
+    -DSKIA_LIBRARY:PATH="$SKIA_ROOT/out/Release-x64/skia.lib" \
     ..
 
 cmake --build . 
