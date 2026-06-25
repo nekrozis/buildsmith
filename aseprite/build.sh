@@ -1,4 +1,6 @@
 set -euo pipefail
+export MSYS2_ENV_CONV_EXCL='*'
+export MSYS2_ARG_CONV_EXCL='*'
 
 mkdir pkgdir && pushd pkgdir
 
