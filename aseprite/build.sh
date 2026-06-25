@@ -14,10 +14,10 @@ pushd aseprite
 export CL="/fp:fast"
 export _CL_="/arch:AVX2"
 
-# CFLAGS="/O2 /Ob2 /GL /MT /DNDEBUG"
-# CXXFLAGS="$CFLAGS"
-# export CFLAGS
-# export CXXFLAGS
+CFLAGS="/O2"
+CXXFLAGS="$CFLAGS"
+export CFLAGS
+export CXXFLAGS
 
 export _LINK_="/LTCG /INCREMENTAL:NO /OPT:REF,ICF /Brepro"
 
