@@ -11,8 +11,8 @@ curl -L 'https://github.com/aseprite/skia/releases/download/m124-08a5439a6b/Skia
 git clone --branch v${pkgver} https://github.com/aseprite/aseprite.git --recurse-submodules
 pushd aseprite
 
-export CL="/fp:fast"
-export _CL_="/arch:AVX2"
+# export CL="/fp:fast"
+# export _CL_="/arch:AVX2"
 
 CFLAGS="/O2 /Ob2 /GL /MT /DNDEBUG"
 CXXFLAGS="$CFLAGS"
@@ -24,7 +24,7 @@ export _LINK_="/LTCG /INCREMENTAL:NO /OPT:REF,ICF /Brepro"
 mkdir build && cd build
 
 cmake -G Ninja \
-    -DCMAKE_BUILD_TYPE:STRING='Release' \
+    -DCMAKE_BUILD_TYPE:STRING='None' \
     -DLAF_BACKEND:STRING='skia' \
     -DENABLE_SENTRY:BOOL='OFF' \
     -DENABLE_NEWS:BOOL='OFF' \
