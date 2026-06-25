@@ -25,7 +25,8 @@ export _LINK_="/LTCG /INCREMENTAL:NO /OPT:REF,ICF /Brepro"
 
 mkdir build && cd build
 
-SKIA_ROOT=$(realpath ../../skia)
+SKIA_ROOT=$(cygpath -m ../../skia)
+echo "SKIA_ROOT=$SKIA_ROOT"
 
 cmake -G Ninja \
     -DCMAKE_BUILD_TYPE:STRING='None' \
