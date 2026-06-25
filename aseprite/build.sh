@@ -11,13 +11,13 @@ curl -L 'https://github.com/aseprite/skia/releases/download/m124-08a5439a6b/Skia
 git clone --branch v${pkgver} https://github.com/aseprite/aseprite.git --recurse-submodules
 pushd aseprite
 
-# export CL="/fp:fast"
-# export _CL_="/arch:AVX2"
+export CL="/fp:fast"
+export _CL_="/arch:AVX2"
 
-CFLAGS="/O2 /Ob2 /GL /MT /DNDEBUG"
-CXXFLAGS="$CFLAGS"
-export CFLAGS
-export CXXFLAGS
+# CFLAGS="/O2 /Ob2 /GL /MT /DNDEBUG"
+# CXXFLAGS="$CFLAGS"
+# export CFLAGS
+# export CXXFLAGS
 
 export _LINK_="/LTCG /INCREMENTAL:NO /OPT:REF,ICF /Brepro"
 
