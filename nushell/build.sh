@@ -27,6 +27,16 @@ rm -rf ./.cargo/ && ls -al
 
 export RUSTUP_TOOLCHAIN=stable
 
+SOURCE_DATE_EPOCH=$(
+  gh release view ${pkgver} \
+    --repo nushell/nushell \
+    --json publishedAt --jq '.publishedAt' \
+  | xargs -I{} date -d "{}" +%s
+)
+
+echo SOURCE_DATE_EPOCH=$SOURCE_DATE_EPOCH
+export SOURCE_DATE_EPOCH=$SOURCE_DATE_EPOCH
+
 cargo fetch --locked --target x86_64-pc-windows-msvc
 
 cargo build --profile make --frozen
