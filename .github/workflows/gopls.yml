@@ -36,5 +36,5 @@ jobs:
       - name: upload artifact
         uses: actions/upload-artifact@v7
         with:
-          name: gopls 
+          name: gopls-${{ github.event.inputs.pkgver }}
           path: pkgdir/tools-gopls-v${{ github.event.inputs.pkgver }}/gopls/gopls.exe

@@ -4,11 +4,10 @@ GitHub Actions workflows for automating Windows builds of multiple software proj
 
 ## Included Workflows
 
-- **AList** – A file listing/WebDAV program that supports multiple storage backends, built with Go and SolidJS.
 - **Aseprite** – An animated sprite editor and pixel art tool with support for custom builds using Skia.
-- **Nekoray** – A cross-platform Qt-based GUI for proxy configuration, using sing-box as its backend.
-- **LOVE** – A lightweight framework for developing 2D games in Lua.
-- **CMD Script Runner** – Runs remote CMD scripts on GitHub-hosted Windows runners.
+- **gopls** – The official Go language server, providing IDE features for Go development.
+- **lazygit** – A simple terminal UI for git commands, written in Go.
+- **Nushell** – A modern shell written in Rust with structured data support.
 
 ## Features
 

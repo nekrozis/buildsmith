@@ -30,6 +30,6 @@ jobs:
 
       - uses: actions/upload-artifact@v7
         with:
-          name: aseprite
+          name: aseprite-${{ github.event.inputs.pkgver }}
           path: pkgdir/release
 

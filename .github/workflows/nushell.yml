@@ -29,6 +29,6 @@ jobs:
 
       - uses: actions/upload-artifact@v7
         with:
-          name: nushell
+          name: nushell-${{ github.event.inputs.pkgver }}
           path: pkgdir/release/*
       
