@@ -47,6 +47,7 @@ cmake.exe -G Ninja `
 cmake.exe --build .
 
 Set-Location ..
+Set-Location ..
 
 New-Item -ItemType Directory -Force release | Out-Null
 Set-Location release
