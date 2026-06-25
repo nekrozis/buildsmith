@@ -19,6 +19,7 @@ jobs:
       _CL_: '/arch:AVX2 /O2 /Ob2 /DNDEBUG'
       _LINK_: '/INCREMENTAL:NO /OPT:REF,ICF /Brepro'
       pkgver: ${{ github.event.inputs.pkgver }}
+      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
     
     steps:
 
