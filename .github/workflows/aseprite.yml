@@ -26,7 +26,7 @@ jobs:
         shell: cmd
         run: |
           call "%VCVARSALL%" x64
-          bash aseprite/build.sh
+          pwsh aseprite/build.ps1
 
       - uses: actions/upload-artifact@v7
         with:
