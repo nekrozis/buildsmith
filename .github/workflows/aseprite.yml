@@ -12,9 +12,6 @@ jobs:
         shell: bash
     env:
       pkgver: ${{ github.event.inputs.pkgver }}
-      CL: '/fp:fast'
-      _CL_: '/arch:AVX2 /O2 /GL /MT'
-      _LINK_: '/LTCG /OPT:REF,ICF'
     
     steps:
       - uses: actions/checkout@v7

@@ -11,23 +11,28 @@ curl -L 'https://github.com/aseprite/skia/releases/download/m124-08a5439a6b/Skia
 git clone --branch v${pkgver} https://github.com/aseprite/aseprite.git --recurse-submodules
 pushd aseprite
 
-sed -i '/CMAKE_USER_MAKE_RULES_OVERRIDE/d' CMakeLists.txt
-sed -i '/CMAKE_USER_MAKE_RULES_OVERRIDE/d' laf/CMakeLists.txt
+export CL="/fp:fast"
+export _CL_="/arch:AVX2"
 
-export _CL_="${_CL_} /D NDEBUG"
+CFLAGS="/O2 /Ob2 /GL /MT /DNDEBUG"
+CXXFLAGS="$CFLAGS"
+export CFLAGS
+export CXXFLAGS
+
+export _LINK_="/LTCG /INCREMENTAL:NO /OPT:REF,ICF /Brepro"
 
 mkdir build && cd build
 
 cmake -G Ninja \
-    -DCMAKE_BUILD_TYPE=Release \
-    -DLAF_BACKEND=skia \
-    -DENABLE_SENTRY=OFF \
-    -DENABLE_NEWS=OFF \
-    -DENABLE_UPDATER=OFF \
-    -DENABLE_DRM=OFF \
-    -DSKIA_DIR=../../skia \
-    -DSKIA_LIBRARY_DIR=../../skia/out/Release-x64 \
-    -DSKIA_LIBRARY=../../skia/out/Release-x64/skia.lib \
+    -DCMAKE_BUILD_TYPE:STRING='None' \
+    -DLAF_BACKEND:STRING='skia' \
+    -DENABLE_SENTRY:BOOL='OFF' \
+    -DENABLE_NEWS:BOOL='OFF' \
+    -DENABLE_UPDATER:BOOL='OFF' \
+    -DENABLE_DRM:BOOL='OFF' \
+    -DSKIA_DIR:PATH='../../skia' \
+    -DSKIA_LIBRARY_DIR:PATH='../../skia/out/Release-x64' \
+    -DSKIA_LIBRARY:PATH='../../skia/out/Release-x64/skia.lib' \
     ..
 
 cmake --build . 
