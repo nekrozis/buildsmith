@@ -12,9 +12,6 @@ jobs:
         shell: bash
     env:
       pkgver: ${{ github.event.inputs.pkgver }}
-      CL: '/fp:fast'
-      _CL_: '/arch:AVX2 /O2 /GL /MT'
-      _LINK_: '/LTCG /OPT:REF,ICF'
     
     steps:
       - uses: actions/checkout@v7
@@ -29,7 +26,7 @@ jobs:
         shell: cmd
         run: |
           call "%VCVARSALL%" x64
-          bash aseprite/build.sh
+          pwsh aseprite/build.ps1
 
       - uses: actions/upload-artifact@v7
         with:
