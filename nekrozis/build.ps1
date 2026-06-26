@@ -7,27 +7,26 @@ git.exe clone https://github.com/nekrozis/shim.git
 git.exe clone https://github.com/nekrozis/msys2_shell.git
 
 Push-Location shim
-{
-    $env:RUSTFLAGS = "-C target-cpu=x86-64-v3"
-    $env:_LINK_ = "/INCREMENTAL:NO /OPT:REF,ICF /Brepro"
 
-    Set-Location shim 
-    cargo.exe build --workspace --release
+$env:RUSTFLAGS = "-C target-cpu=x86-64-v3"
+$env:_LINK_ = "/INCREMENTAL:NO /OPT:REF,ICF /Brepro"
 
-    $env:RUSTFLAGS = $null
-    $env:_LINK_ = $null
-}
+Set-Location shim 
+cargo.exe build --workspace --release
+
+$env:RUSTFLAGS = $null
+$env:_LINK_ = $null
+
 Pop-Location
 
 Push-Location msys2_shell
-{
-    $env:_LINK_ = "/INCREMENTAL:NO /OPT:REF,ICF /Brepro"
 
-    cargo build --release
+$env:_LINK_ = "/INCREMENTAL:NO /OPT:REF,ICF /Brepro"
 
-    $env:_LINK_ = $null
+cargo build --release
 
-}
+$env:_LINK_ = $null
+
 Pop-Location
 
 New-Item -ItemType Directory -Force release
