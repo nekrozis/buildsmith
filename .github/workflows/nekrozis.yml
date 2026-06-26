@@ -1,0 +1,22 @@
+name: build utils made from nekrozis 
+
+on:
+  workflow_dispatch: 
+
+jobs:
+  build:
+    runs-on: windows-latest
+    defaults:
+      run:
+        shell: pwsh 
+    
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: build utils 
+        run: pwsh nekrozis/build.ps1
+      
+      - uses: actions/upload-artifact@v7
+        with:
+          name: winutils-latest 
+          path: pkgdir/release/* 
