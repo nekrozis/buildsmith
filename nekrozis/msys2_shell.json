@@ -1,5 +1,5 @@
 {
-  "LoginShell": "bash",
+  "loginShell": "bash",
   "msysRoot": "C:\\msys64",
   "winSymlinks": true
 }
