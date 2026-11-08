@@ -1,0 +1,96 @@
+name: package
+true:
+  workflow_call:
+    inputs:
+      package:
+        description: Directory name under packages/
+        type: string
+        required: true
+      pkgver:
+        description: Override version.pkgver from the recipe
+        type: string
+        required: false
+        default: ''
+      pkgrel:
+        description: Override version.pkgrel from the recipe (0 keeps the recipe value)
+        type: number
+        required: false
+        default: 0
+      arch:
+        description: Override the first entry of arch in the recipe
+        type: string
+        required: false
+        default: ''
+    outputs:
+      tag:
+        description: Release tag this build would be published under
+        value: ${{ jobs.plan.outputs.tag }}
+      name:
+        description: Package name
+        value: ${{ jobs.plan.outputs.name }}
+      full:
+        description: <pkgver>-<pkgrel>
+        value: ${{ jobs.plan.outputs.full }}
+      publishable:
+        description: true when distribution is allowed
+        value: ${{ jobs.plan.outputs.publishable }}
+permissions:
+  contents: read
+jobs:
+  plan:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    outputs:
+      plan: ${{ steps.plan.outputs.plan }}
+      ids: ${{ steps.plan.outputs.ids }}
+      tag: ${{ steps.plan.outputs.tag }}
+      name: ${{ steps.plan.outputs.name }}
+      full: ${{ steps.plan.outputs.full }}
+      publishable: ${{ steps.plan.outputs.publishable }}
+    steps:
+    - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+    - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0
+      with:
+        python-version: '3.13'
+        cache: pip
+        cache-dependency-path: tools/requirements.txt
+    - name: Install tooling
+      run: python -m pip install --disable-pip-version-check -r tools/requirements.txt
+    - name: Resolve plan
+      id: plan
+      env:
+        PACKAGE: ${{ inputs.package }}
+        PKGVER: ${{ inputs.pkgver }}
+        PKGREL: ${{ inputs.pkgrel }}
+        ARCH: ${{ inputs.arch }}
+        PYTHON: python
+      run: 'set -euo pipefail
+
+        python tools/pkgctl.py plan > plan.json
+
+        cat plan.json
+
+        python - <<''PY'' >> "$GITHUB_OUTPUT"
+
+        import json
+
+        import os
+
+
+        plan = json.load(open("plan.json", encoding="utf-8"))
+
+        print("plan=" + json.dumps(plan, separators=(",", ":")))
+
+        print("tag={}/v{}".format(plan["name"], plan["full"]))
+
+        print("name=" + plan["name"])
+
+        print("full=" + plan["full"])
+
+        print("publishable=" + str(plan["publishable"]).lower())
+
+        PY
+
+        echo "ids=$(python tools/pkgctl.py plan --ids)" >> "$GITHUB_OUTPUT"
+
+        '

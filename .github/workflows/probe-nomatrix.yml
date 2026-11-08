@@ -1,0 +1,10 @@
+name: probe-nomatrix
+on:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  call:
+    uses: ./.github/workflows/probe-called-nomatrix.yml
+    with:
+      package: __probe__

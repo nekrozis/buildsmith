@@ -1,0 +1,10 @@
+name: probe-noperms
+on:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  call:
+    uses: ./.github/workflows/probe-called-noperms.yml
+    with:
+      package: __probe__
