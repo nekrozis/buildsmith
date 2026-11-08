@@ -322,6 +322,21 @@ class PackagingTest(PkgctlTestCase):
 
 
 class AssembleTest(PkgctlTestCase):
+    def test_lone_artifact_extracted_flat_is_assembled(self):
+        # actions/download-artifact writes a single artifact into `path` itself,
+        # so the assemble step has to find it without a per-artifact directory.
+        source, commit = self.make_source_repo()
+        self.write_recipe(commit=commit, source_url=str(source))
+        _, out = self.build_and_package(build_id="a")
+        flat = self.tmp / "flat"
+        flat.mkdir()
+        for item in out.iterdir():
+            shutil.copy2(item, flat / item.name)
+        self.pkgctl("assemble", "--package", "demo", "--ids", "a", "--out", str(flat))
+        manifest = json.loads((flat / "demo-1.0.0-1-amd64v3.manifest.json").read_text(encoding="utf-8"))
+        self.assertFalse(manifest["reproducibility"]["ab_verified"])
+        self.assertEqual((flat / "SHA256SUMS").read_text(encoding="utf-8").count("demo-1.0.0-1"), 2)
+
     def test_ab_identical_marks_verified(self):
         source, commit = self.make_source_repo()
         self.write_recipe(commit=commit, source_url=str(source))
@@ -433,26 +448,6 @@ class WorkflowLintTest(PkgctlTestCase):
         result = self.pkgctl("lint-workflows", "--dir", str(directory), expect=1)
         self.assertIn("must be pinned", result.stderr)
         self.assertIn("timeout-minutes", result.stderr)
-
-    def test_downloading_artifacts_without_a_name_is_rejected(self):
-        # A single unnamed artifact is extracted straight into `path`, so the
-        # per-artifact directory the assemble step reads never appears.
-        directory = self.write_workflow(textwrap.dedent(
-            """\
-            name: sample
-            on: [workflow_dispatch]
-            jobs:
-              assemble:
-                runs-on: ubuntu-24.04
-                timeout-minutes: 30
-                steps:
-                  - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333
-                    with:
-                      path: dist
-            """
-        ))
-        result = self.pkgctl("lint-workflows", "--dir", str(directory), expect=1)
-        self.assertIn("must pass name", result.stderr)
 
 
 class RepositoryRecipesTest(unittest.TestCase):

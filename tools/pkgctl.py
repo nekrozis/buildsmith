@@ -734,6 +734,15 @@ def cmd_smoke(args):
             print(f"  {line}")
 
 
+def artifact_dir(out_dir, build_id, expected_manifest, count):
+    # actions/download-artifact names the destination after the artifact only when
+    # several are fetched; a lone artifact lands directly in `path`.
+    leg_dir = out_dir / build_id
+    if count == 1 and not (leg_dir / expected_manifest).is_file() and (out_dir / expected_manifest).is_file():
+        return out_dir
+    return leg_dir
+
+
 def cmd_assemble(args):
     root = repo_root()
     recipe = load_recipe(args.package, root)
@@ -746,7 +755,8 @@ def cmd_assemble(args):
     digests = []
     manifests = {}
     for build_id in ids:
-        manifest_path = out_dir / build_id / manifest_name(resolved)
+        leg_dir = artifact_dir(out_dir, build_id, manifest_name(resolved), len(ids))
+        manifest_path = leg_dir / manifest_name(resolved)
         if not manifest_path.is_file():
             raise Fail(f"missing manifest {manifest_path} (package with --id {build_id} --out {out_dir / build_id})")
         manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
@@ -768,6 +778,7 @@ def cmd_assemble(args):
 
     chosen = ids[-1]
     manifest = manifests[chosen]
+    chosen_dir = artifact_dir(out_dir, chosen, manifest_name(resolved), len(ids))
     if len(ids) > 1:
         if len(ids) != 2:
             raise Fail("A/B comparison expects exactly two build ids")
@@ -777,7 +788,10 @@ def cmd_assemble(args):
         manifest["reproducibility"]["ab_sha256"] = digests
 
     for name in (resolved["artifact"], manifest_name(resolved)):
-        shutil.copy2(out_dir / chosen / name, out_dir / name)
+        source = chosen_dir / name
+        target = out_dir / name
+        if source.resolve() != target.resolve():
+            shutil.copy2(source, target)
     write_json(out_dir / manifest_name(resolved), manifest)
     write_sha256sums(out_dir)
     log(f"assembled {resolved['artifact']} (sha256 {digests[0]})")
@@ -927,16 +941,6 @@ def cmd_lint_workflows(args):
             runner = job.get("runs-on")
             if isinstance(runner, str) and runner.endswith("-latest"):
                 problems.append(f"{path}:{job_name}: runs-on {runner} must be pinned to an explicit image")
-            for step in job.get("steps") or []:
-                if not isinstance(step, dict):
-                    continue
-                uses = str(step.get("uses") or "")
-                # Without `name` the artifact is extracted straight into `path`
-                # when it is the only one, so the per-artifact directory the
-                # assemble step relies on does not exist.
-                if uses.startswith("actions/download-artifact@") and "name" not in (step.get("with") or {}):
-                    problems.append(
-                        f"{path}:{job_name}: actions/download-artifact must pass name")
         if document.get("permissions") == "write-all":
             problems.append(f"{path}: permissions: write-all is forbidden")
         for match in re.finditer(r"^\s*(?:-\s*)?uses:\s*(\S+)\s*$", text, re.MULTILINE):
