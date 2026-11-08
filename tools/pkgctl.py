@@ -242,6 +242,9 @@ def validate_recipe(recipe):
                       f"{prefix}.sha256 must be a sha256 hex digest")
                 check(source.get("extract") in ("zip", "tar.gz", "tar.xz", "tar"),
                       f"{prefix}.extract must be one of zip, tar.gz, tar.xz, tar")
+                accept = source.get("accept")
+                check(accept is None or (isinstance(accept, str) and bool(accept)),
+                      f"{prefix}.accept must be a non-empty string when set")
 
     build = data["build"]
     check(isinstance(build, dict), "build must be a mapping")
@@ -347,7 +350,8 @@ def cmd_plan(args):
     variables = recipe.variables(resolved["pkgver"], resolved["pkgrel"], resolved["arch"])
     sources = []
     for source in recipe["sources"]:
-        entry = {key: source.get(key) for key in ("type", "url", "tag", "commit", "dir", "extract", "sha256")}
+        entry = {key: source.get(key)
+             for key in ("type", "url", "accept", "tag", "commit", "dir", "extract", "sha256")}
         for key in ("url", "tag"):
             if entry.get(key):
                 entry[key] = render(entry[key], variables)
@@ -374,14 +378,15 @@ def cmd_plan(args):
     print(stable_json(plan), end="")
 
 
-def download(url, destination):
+def download(url, destination, accept=None):
     destination.parent.mkdir(parents=True, exist_ok=True)
     # A release asset behind the CDN can answer 504 for a few minutes while a
     # full download of the same URL succeeds, so ride it out for up to three
     # minutes instead of giving up after twenty seconds.
+    headers = ["--header", f"Accept: {accept}"] if accept else []
     run(["curl", "--fail", "--silent", "--show-error", "--location",
          "--retry", "8", "--retry-delay", "5", "--retry-max-time", "180",
-         "--retry-all-errors", "--connect-timeout", "30",
+         "--retry-all-errors", "--connect-timeout", "30", *headers,
          "--output", str(destination), url])
 
 
@@ -408,10 +413,15 @@ def verify_tag(source):
         )
 
 
-def fetch_git(source, destination):
+def fetch_git(source, destination, reuse=False):
     commit = source["commit"]
     tag = source.get("tag")
     verify_tag(source)
+    if reuse and (destination / ".git").is_dir():
+        head = git(["-C", str(destination), "rev-parse", "HEAD"], capture=True).stdout.strip()
+        if head == commit:
+            log(f"reusing {source['url']} at {commit[:12]}")
+            return head
     if destination.exists():
         shutil.rmtree(destination)
     destination.parent.mkdir(parents=True, exist_ok=True)
@@ -437,7 +447,7 @@ def fetch_url(source, destination, cache):
     cached = cache / expected
     if not cached.is_file() or sha256_file(cached) != expected:
         log(f"downloading {url}")
-        download(url, cached)
+        download(url, cached, source.get("accept"))
         actual = sha256_file(cached)
         if actual != expected:
             cached.unlink(missing_ok=True)
@@ -504,6 +514,34 @@ def build_env(recipe, resolved, paths, epoch):
     return env
 
 
+def fetch_sources(recipe, root, paths, variables):
+    paths["src"].mkdir(parents=True, exist_ok=True)
+    for source in recipe["sources"]:
+        rendered = {
+            **source,
+            "url": render(source["url"], variables),
+            "tag": render(source["tag"], variables) if source.get("tag") else None,
+        }
+        destination = paths["src"] / source["dir"]
+        if source["type"] == "git":
+            fetch_git(rendered, destination, reuse=True)
+        else:
+            fetch_url(rendered, destination, root / "work" / "cache")
+
+
+def cmd_fetch(args):
+    # Downloading is the only step that depends on somebody else's server, so it
+    # runs as its own command: a 504 or a moved tag must fail before a compiler
+    # is started, not twenty minutes into a build.
+    root = repo_root()
+    recipe = load_recipe(args.package, root)
+    resolved = recipe.resolved(args.pkgver, args.pkgrel, args.arch)
+    variables = recipe.variables(resolved["pkgver"], resolved["pkgrel"], resolved["arch"])
+    paths = work_paths(root, args.id, args.work)
+    fetch_sources(recipe, root, paths, variables)
+    log(f"sources ready in {paths['src']}")
+
+
 def cmd_build(args):
     root = repo_root()
     recipe = load_recipe(args.package, root)
@@ -517,17 +555,7 @@ def cmd_build(args):
     if (recipe.dir / "files").is_dir():
         shutil.copytree(recipe.dir / "files", paths["files"], dirs_exist_ok=True)
 
-    for source in recipe["sources"]:
-        rendered = {
-            **source,
-            "url": render(source["url"], variables),
-            "tag": render(source["tag"], variables) if source.get("tag") else None,
-        }
-        destination = paths["src"] / source["dir"]
-        if source["type"] == "git":
-            fetch_git(rendered, destination)
-        else:
-            fetch_url(rendered, destination, root / "work" / "cache")
+    fetch_sources(recipe, root, paths, variables)
 
     epoch = source_date_epoch(recipe, paths["src"], variables)
     env = build_env(recipe, resolved, paths, epoch)
@@ -987,6 +1015,11 @@ def main(argv=None):
     common(plan)
     plan.add_argument("--ids", action="store_true")
     plan.set_defaults(func=cmd_plan)
+
+    fetch = sub.add_parser("fetch")
+    common(fetch)
+    fetch.add_argument("--id", default="a")
+    fetch.set_defaults(func=cmd_fetch)
 
     build = sub.add_parser("build")
     common(build)

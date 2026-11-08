@@ -292,6 +292,35 @@ class PackagingTest(PkgctlTestCase):
         self.assertTrue(os.path.isabs(lines[-1]), f"not absolute: {lines[-1]}")
         self.assertEqual(Path(lines[-1]).name, "argv0.sh")
 
+    def test_fetch_replaces_the_download_step_and_is_reused_by_build(self):
+        source, commit = self.make_source_repo()
+        self.write_recipe(commit=commit, source_url=str(source))
+        work = self.tmp / "work"
+        self.pkgctl("fetch", "--package", "demo", "--id", "a", "--work", str(work))
+        result = self.pkgctl("build", "--package", "demo", "--id", "a", "--work", str(work))
+        self.assertIn("reusing", result.stdout + result.stderr)
+        self.assertTrue((work / "a" / "src" / "demo" / "README.md").is_file())
+
+    def test_url_source_sends_the_accept_header(self):
+        # GitHub's release redirect can answer 504 while the API asset route
+        # serves the same bytes, so a recipe can opt into an Accept header.
+        payload = self.tmp / "asset.zip"
+        with zipfile.ZipFile(payload, "w") as archive:
+            archive.writestr("inner.txt", "payload\n")
+        sources = [
+            "  - type: url",
+            f"    url: file://{payload}",
+            "    accept: application/octet-stream",
+            f"    sha256: {sha256_file(payload)}",
+            "    extract: zip",
+            "    dir: asset",
+        ]
+        self.write_recipe(sources=sources)
+        result = self.pkgctl("fetch", "--package", "demo", "--id", "a",
+                             "--work", str(self.tmp / "work"))
+        self.assertIn("Accept: application/octet-stream", result.stdout + result.stderr)
+        self.assertTrue((self.tmp / "work" / "a" / "src" / "asset" / "inner.txt").is_file())
+
     def test_packaging_is_byte_identical(self):
         source, commit = self.make_source_repo()
         self.write_recipe(commit=commit, source_url=str(source))

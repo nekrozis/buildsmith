@@ -16,8 +16,14 @@ sources:
     commit: 331e898ef405d919539c03fd1675691cfa16c3a3
     dir: aseprite
     submodules: true
+  # Same bytes as
+  #   https://github.com/aseprite/skia/releases/download/m124-08a5439a6b/Skia-Windows-Release-x64.zip
+  # but that redirect answered 504 from GitHub's own edge on 2026-11-08 while the
+  # asset route served the file. The id is opaque only until the sha256 below
+  # pins the content, so an upstream re-upload cannot change what we build.
   - type: url
-    url: https://github.com/aseprite/skia/releases/download/m124-08a5439a6b/Skia-Windows-Release-x64.zip
+    url: https://api.github.com/repos/aseprite/skia/releases/assets/173170506
+    accept: application/octet-stream
     sha256: 5a371a4b2819bb4eb96e36cd75fa623585e1d5477e253a970302b6f2471b6934
     extract: zip
     dir: skia
