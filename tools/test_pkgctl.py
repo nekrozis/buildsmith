@@ -434,6 +434,26 @@ class WorkflowLintTest(PkgctlTestCase):
         self.assertIn("must be pinned", result.stderr)
         self.assertIn("timeout-minutes", result.stderr)
 
+    def test_downloading_artifacts_without_a_name_is_rejected(self):
+        # A single unnamed artifact is extracted straight into `path`, so the
+        # per-artifact directory the assemble step reads never appears.
+        directory = self.write_workflow(textwrap.dedent(
+            """\
+            name: sample
+            on: [workflow_dispatch]
+            jobs:
+              assemble:
+                runs-on: ubuntu-24.04
+                timeout-minutes: 30
+                steps:
+                  - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333
+                    with:
+                      path: dist
+            """
+        ))
+        result = self.pkgctl("lint-workflows", "--dir", str(directory), expect=1)
+        self.assertIn("must pass name", result.stderr)
+
 
 class RepositoryRecipesTest(unittest.TestCase):
     """Guards the recipes that actually ship in this repository."""

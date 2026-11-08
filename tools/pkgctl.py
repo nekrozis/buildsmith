@@ -927,6 +927,16 @@ def cmd_lint_workflows(args):
             runner = job.get("runs-on")
             if isinstance(runner, str) and runner.endswith("-latest"):
                 problems.append(f"{path}:{job_name}: runs-on {runner} must be pinned to an explicit image")
+            for step in job.get("steps") or []:
+                if not isinstance(step, dict):
+                    continue
+                uses = str(step.get("uses") or "")
+                # Without `name` the artifact is extracted straight into `path`
+                # when it is the only one, so the per-artifact directory the
+                # assemble step relies on does not exist.
+                if uses.startswith("actions/download-artifact@") and "name" not in (step.get("with") or {}):
+                    problems.append(
+                        f"{path}:{job_name}: actions/download-artifact must pass name")
         if document.get("permissions") == "write-all":
             problems.append(f"{path}: permissions: write-all is forbidden")
         for match in re.finditer(r"^\s*(?:-\s*)?uses:\s*(\S+)\s*$", text, re.MULTILINE):
