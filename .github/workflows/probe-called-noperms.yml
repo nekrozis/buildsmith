@@ -1,5 +1,5 @@
 name: package
-true:
+on:
   workflow_call:
     inputs:
       package:
