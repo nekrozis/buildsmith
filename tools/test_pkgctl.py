@@ -269,6 +269,29 @@ class PackagingTest(PkgctlTestCase):
         sums = (out / "SHA256SUMS").read_text(encoding="utf-8")
         self.assertIn("demo-1.0.0-1-amd64v3.zip", sums)
 
+    def test_smoke_runs_a_staged_program_by_absolute_path(self):
+        source, commit = self.make_source_repo()
+        directory = self.write_recipe(commit=commit, source_url=str(source))
+        recipe = directory / "package.yml"
+        recipe.write_text(recipe.read_text(encoding="utf-8").replace(
+            "smoke: []", "smoke:\n  - [bin/argv0.sh]"), encoding="utf-8")
+        (directory / "build.sh").write_text(
+            "#!/usr/bin/env bash\n"
+            "set -euo pipefail\n"
+            "mkdir -p \"$PKG_OUT_DIR\"\n"
+            "cat > \"$PKG_OUT_DIR/argv0.sh\" <<'EOS'\n"
+            "#!/bin/sh\n"
+            "printf '%s\\n' \"$0\"\n"
+            "EOS\n"
+            "chmod +x \"$PKG_OUT_DIR/argv0.sh\"\n", encoding="utf-8")
+        work = self.tmp / "work"
+        self.pkgctl("build", "--package", "demo", "--id", "a", "--work", str(work))
+        result = self.pkgctl("smoke", "--package", "demo", "--id", "a", "--work", str(work))
+        lines = [line.strip() for line in result.stdout.splitlines() if line.strip()]
+        self.assertTrue(lines, result.stdout)
+        self.assertTrue(os.path.isabs(lines[-1]), f"not absolute: {lines[-1]}")
+        self.assertEqual(Path(lines[-1]).name, "argv0.sh")
+
     def test_packaging_is_byte_identical(self):
         source, commit = self.make_source_repo()
         self.write_recipe(commit=commit, source_url=str(source))

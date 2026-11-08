@@ -10,7 +10,10 @@ New-Item -ItemType Directory -Force $buildRoot | Out-Null
 Push-Location $buildRoot
 try {
   cmake.exe -G Ninja `
-    -DCMAKE_BUILD_TYPE:STRING="None" `
+    -DCMAKE_BUILD_TYPE:STRING="Release" `
+    -DCMAKE_MSVC_RUNTIME_LIBRARY:STRING="MultiThreaded" `
+    -DCMAKE_C_FLAGS_RELEASE:STRING="/O2 /Ob2 /GL /DNDEBUG /arch:AVX2" `
+    -DCMAKE_CXX_FLAGS_RELEASE:STRING="/O2 /Ob2 /GL /DNDEBUG /arch:AVX2 /fp:fast" `
     -DLAF_BACKEND:STRING="skia" `
     -DENABLE_SENTRY:BOOL=OFF `
     -DENABLE_NEWS:BOOL=OFF `

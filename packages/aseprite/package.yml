@@ -29,13 +29,10 @@ build:
   toolchain:
     msvc: "17"
   env:
-    CL: "/fp:fast"
-    _CL_: "/arch:AVX2 /O2 /Ob2 /DNDEBUG"
-    CFLAGS: "/O2 /Ob2 /GL /MT /DNDEBUG"
-    CXXFLAGS: "/O2 /Ob2 /GL /MT /DNDEBUG"
     _LINK_: "/LTCG /INCREMENTAL:NO /OPT:REF,ICF /Brepro"
   overrides:
-    - "MSVC /arch:AVX2 (implies AVX/SSE4.2 and enables FMA), /fp:fast, /GL, /MT"
+    - "MSVC /arch:AVX2 (implies AVX/SSE4.2 and enables FMA), /fp:fast, /GL + /LTCG, static /MT CRT"
+    - "optimisation lives in CMAKE_C_FLAGS_RELEASE/CMAKE_CXX_FLAGS_RELEASE, not in CL/_CL_: those also hit CMake's configure-time try-compiles and collide with /RTC1"
     - "LAF_BACKEND=skia with the pinned aseprite/skia prebuilt library"
     - "Sentry, news, updater and DRM disabled"
 

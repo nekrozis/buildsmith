@@ -698,6 +698,20 @@ def write_sha256sums(out_dir):
     (out_dir / "SHA256SUMS").write_text("\n".join(lines) + "\n", encoding="utf-8", newline="\n")
 
 
+def resolve_smoke_program(parts, target_root):
+    # On Windows a relative program name is resolved against the caller's own
+    # working directory, not the cwd= handed to the child process, so
+    # "bin/foo.exe" fails with WinError 2 even though the file is staged. A
+    # program that names a path inside the stage tree is made absolute.
+    head = parts[0]
+    if os.path.isabs(head) or ("/" not in head and "\\" not in head):
+        return parts
+    candidate = target_root / head
+    if not candidate.is_file():
+        raise Fail(f"smoke program {head} is missing from {target_root}")
+    return [str(candidate), *parts[1:]]
+
+
 def cmd_smoke(args):
     root = repo_root()
     recipe = load_recipe(args.package, root)
@@ -707,7 +721,8 @@ def cmd_smoke(args):
     if not target_root.is_dir():
         raise Fail(f"nothing staged at {target_root}; run build first")
     for command in recipe["smoke"]:
-        rendered = [render(str(part), variables) for part in command]
+        rendered = resolve_smoke_program([render(str(part), variables) for part in command],
+                                         target_root)
         log(f"smoke: {' '.join(rendered)}")
         result = subprocess.run(rendered, cwd=str(target_root), check=False, text=True,
                                 timeout=300, capture_output=True)
