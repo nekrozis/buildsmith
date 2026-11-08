@@ -376,7 +376,10 @@ def cmd_plan(args):
 
 def download(url, destination):
     destination.parent.mkdir(parents=True, exist_ok=True)
-    run(["curl", "--fail", "--silent", "--show-error", "--location", "--retry", "3",
+    # --retry-all-errors: a gateway 504 on a GitHub release asset is transient
+    # and curl's default retry set gives up after a few seconds of flakiness.
+    run(["curl", "--fail", "--silent", "--show-error", "--location",
+         "--retry", "5", "--retry-delay", "2", "--retry-all-errors", "--connect-timeout", "30",
          "--output", str(destination), url])
 
 
