@@ -376,10 +376,12 @@ def cmd_plan(args):
 
 def download(url, destination):
     destination.parent.mkdir(parents=True, exist_ok=True)
-    # --retry-all-errors: a gateway 504 on a GitHub release asset is transient
-    # and curl's default retry set gives up after a few seconds of flakiness.
+    # A release asset behind the CDN can answer 504 for a few minutes while a
+    # full download of the same URL succeeds, so ride it out for up to three
+    # minutes instead of giving up after twenty seconds.
     run(["curl", "--fail", "--silent", "--show-error", "--location",
-         "--retry", "5", "--retry-delay", "2", "--retry-all-errors", "--connect-timeout", "30",
+         "--retry", "8", "--retry-delay", "5", "--retry-max-time", "180",
+         "--retry-all-errors", "--connect-timeout", "30",
          "--output", str(destination), url])
 
 
