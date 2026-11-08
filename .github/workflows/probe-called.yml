@@ -1,0 +1,13 @@
+name: probe-called
+on:
+  workflow_call:
+    inputs:
+      package:
+        type: string
+        required: true
+jobs:
+  echo:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - run: echo "called ${{ inputs.package }}"
