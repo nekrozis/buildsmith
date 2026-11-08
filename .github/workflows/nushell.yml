@@ -9,10 +9,10 @@ on:
         required: false
         default: ""
       pkgrel:
-        description: Package revision (0 keeps the recipe value)
-        type: number
+        description: Package revision; empty or 0 keeps the recipe value
+        type: string
         required: false
-        default: 0
+        default: ""
       publish:
         description: Publish a draft release after the build succeeds
         type: boolean

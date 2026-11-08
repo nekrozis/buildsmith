@@ -923,6 +923,18 @@ def cmd_lint_workflows(args):
     print(f"linted {len(paths)} workflow file(s)")
 
 
+def env_pkgrel():
+    # The dispatch input is a string so it can be forwarded through a reusable
+    # workflow; empty means "keep the recipe value".
+    raw = (os.environ.get("PKGREL") or "").strip()
+    if not raw:
+        return None
+    try:
+        return int(raw)
+    except ValueError:
+        raise SystemExit(f"PKGREL must be an integer, got {raw!r}")
+
+
 def main(argv=None):
     parser = argparse.ArgumentParser(prog="pkgctl")
     sub = parser.add_subparsers(dest="command", required=True)
@@ -933,8 +945,7 @@ def main(argv=None):
         package = os.environ.get("PACKAGE") or None
         target.add_argument("--package", default=package, required=package is None)
         target.add_argument("--pkgver", default=os.environ.get("PKGVER") or None)
-        target.add_argument("--pkgrel", type=int,
-                            default=int(os.environ["PKGREL"]) if os.environ.get("PKGREL") else None)
+        target.add_argument("--pkgrel", type=int, default=env_pkgrel())
         target.add_argument("--arch", default=os.environ.get("ARCH") or None)
         target.add_argument("--work", default=os.environ.get("WORK") or None)
 
