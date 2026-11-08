@@ -179,6 +179,25 @@ class RecipeValidationTest(PkgctlTestCase):
         result = self.pkgctl("validate", "--package", "demo", expect=1)
         self.assertIn("unknown top-level key", result.stderr)
 
+    def test_bash_on_a_windows_runner_is_rejected(self):
+        source, commit = self.make_source_repo()
+        directory = self.write_recipe(commit=commit, source_url=str(source))
+        recipe = directory / "package.yml"
+        recipe.write_text(recipe.read_text(encoding="utf-8").replace(
+            "runner: ubuntu-24.04", "runner: windows-2025"), encoding="utf-8")
+        result = self.pkgctl("validate", "--package", "demo", expect=1)
+        self.assertIn("pwsh only", result.stderr)
+
+    def test_script_suffix_must_match_the_shell(self):
+        source, commit = self.make_source_repo()
+        directory = self.write_recipe(commit=commit, source_url=str(source))
+        recipe = directory / "package.yml"
+        recipe.write_text(recipe.read_text(encoding="utf-8").replace(
+            "script: build.sh", "script: build.ps1"), encoding="utf-8")
+        (directory / "build.ps1").write_text("exit 0\n", encoding="utf-8")
+        result = self.pkgctl("validate", "--package", "demo", expect=1)
+        self.assertIn("must end with .sh", result.stderr)
+
     def test_arch_is_validated(self):
         source, commit = self.make_source_repo()
         directory = self.write_recipe(commit=commit, source_url=str(source))

@@ -69,7 +69,7 @@ jobs:
           PYTHON: python
         run: |
           set -euo pipefail
-          bash tools/run-pkgctl.sh plan > plan.json
+          python tools/pkgctl.py plan > plan.json
           cat plan.json
           python - <<'PY' >> "$GITHUB_OUTPUT"
           import json
@@ -82,7 +82,7 @@ jobs:
           print("full=" + plan["full"])
           print("publishable=" + str(plan["publishable"]).lower())
           PY
-          echo "ids=$(bash tools/run-pkgctl.sh plan --ids)" >> "$GITHUB_OUTPUT"
+          echo "ids=$(python tools/pkgctl.py plan --ids)" >> "$GITHUB_OUTPUT"
 
   build:
     needs: plan
@@ -94,7 +94,7 @@ jobs:
     timeout-minutes: 240
     defaults:
       run:
-        shell: bash
+        shell: pwsh
     env:
       PACKAGE: ${{ inputs.package }}
       PKGVER: ${{ inputs.pkgver }}
@@ -126,11 +126,11 @@ jobs:
         with:
           arch: x64
       - name: Build
-        run: bash tools/run-pkgctl.sh build --id "${BUILD_ID}" --work "${RUNNER_TEMP}/work"
+        run: python tools/pkgctl.py build --id $env:BUILD_ID --work "$env:RUNNER_TEMP/work"
       - name: Smoke test
-        run: bash tools/run-pkgctl.sh smoke --id "${BUILD_ID}" --work "${RUNNER_TEMP}/work"
+        run: python tools/pkgctl.py smoke --id $env:BUILD_ID --work "$env:RUNNER_TEMP/work"
       - name: Package
-        run: bash tools/run-pkgctl.sh package --id "${BUILD_ID}" --work "${RUNNER_TEMP}/work" --out "${RUNNER_TEMP}/dist/${BUILD_ID}"
+        run: python tools/pkgctl.py package --id $env:BUILD_ID --work "$env:RUNNER_TEMP/work" --out "$env:RUNNER_TEMP/dist/$env:BUILD_ID"
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: ${{ matrix.id }}
@@ -170,7 +170,7 @@ jobs:
         run: |
           set -euo pipefail
           ids="$(python -c 'import json, os; print(",".join(json.loads(os.environ["IDS"])))')"
-          bash tools/run-pkgctl.sh assemble --ids "${ids}" --out dist
+          python tools/pkgctl.py assemble --ids "${ids}" --out dist
           ls -l dist
       - uses: actions/attest-build-provenance@4d101475d8b20a2381f78447822ac1eab6504dd8 # v4.2.2
         with:

@@ -28,9 +28,9 @@ sources:
     dir: thing
 
 build:
-  script: build.sh            # relative to the recipe directory
-  shell: bash                 # bash | pwsh
-  runner: windows-2025        # explicit image, never *-latest
+  script: build.ps1             # relative to the recipe directory
+  shell: pwsh                   # pwsh; bash is only allowed off Windows
+  runner: windows-2025          # explicit image, never *-latest
   toolchain:
     go: "1.27.3"              # go | rust | msvc, all optional
   env:                        # exported to the build script
@@ -79,11 +79,33 @@ relative to `${src}`.
 | `PKG_RECIPE_DIR` | the recipe directory |
 | `SOURCE_DATE_EPOCH` | fixed for the run |
 
-Build scripts write into `$PKG_OUT_DIR`; they must not touch `$PKG_STAGE_DIR`.
+Build scripts write into `$env:PKG_OUT_DIR`; they must not touch
+`$env:PKG_STAGE_DIR`.
+
+## Build scripts
+
+Windows builds run in **PowerShell**, never bash: a `windows-*` runner with any
+other `shell` fails `validate`, and the script suffix must match the shell
+(`.ps1` for `pwsh`, `.sh` for `bash`). The reason is not taste — MSYS2 rewrites
+POSIX-looking arguments such as `/arch:AVX2` into
+`C:/Program Files/Git/arch:AVX2`, and its own `link.exe` plus coreutils shadow
+the MSVC tools in `PATH`.
+
+Two habits come with that choice:
+
+- Start with `$ErrorActionPreference = 'Stop'`. PowerShell does not fail on a
+  native command's non-zero exit code, so check `$LASTEXITCODE` after every
+  external tool: a silently failed `cargo build` would otherwise package an
+  empty archive and look like a success.
+- Build paths with `Join-Path` and read the environment as `$env:NAME`.
+
+Ubuntu jobs keep bash; they only orchestrate `pkgctl`. They need no wrapper
+script either, because `pkgctl` falls back to `PACKAGE`, `PKGVER`, `PKGREL`,
+`ARCH` and `WORK` from the environment when the flags are absent.
 
 ## Adding a package
 
-1. `packages/<name>/package.yml` + `build.sh`/`build.ps1`.
+1. `packages/<name>/package.yml` + `build.ps1`.
 2. Resolve the real commit for the tag (`git ls-remote --tags`) and pin it.
 3. Compute `sha256` for every archive source.
 4. `python tools/pkgctl.py validate --package <name>`.

@@ -17,8 +17,8 @@ sources:
     dir: nushell
 
 build:
-  script: build.sh
-  shell: bash
+  script: build.ps1
+  shell: pwsh
   runner: windows-2025
   toolchain:
     rust: "1.99.1"

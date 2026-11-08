@@ -12,7 +12,6 @@ generation, and the workflows only orchestrate it.
 
 ```
 packages/<name>/package.yml   recipe: sources, pins, toolchain, stage map
-packages/<name>/build.sh      build script (bash)
 packages/<name>/build.ps1     build script (pwsh)
 packages/<name>/files/        static files shipped inside the archive
 tools/pkgctl.py               the only entry point for build/package/publish
@@ -70,6 +69,9 @@ environment only exist on the publish job.
 
 - Versions come from the recipe; `workflow_dispatch` inputs override them for a
   single run. A rebuilt archive is a new `pkgrel`, never a replaced asset.
+- Windows build scripts are PowerShell (`build.ps1` with `shell: pwsh`); `validate`
+  rejects any other shell on a Windows runner. MSYS2 argument rewriting and its
+  `link.exe` shadowing are not worth the surprises.
 - Sources are pinned to full commit SHAs (and to verified sha256 digests for
   archives). A moved tag fails the build instead of silently changing inputs.
 - Toolchains are pinned per recipe. Updating a compiler is a deliberate `pkgrel`

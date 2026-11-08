@@ -26,6 +26,7 @@ except ImportError:  # pragma: no cover
 SCHEMA = 1
 ARCHES = ("amd64v3", "amd64", "arm64")
 SHELLS = ("bash", "pwsh")
+SCRIPT_SUFFIX = {"pwsh": ".ps1", "bash": ".sh"}
 DISTRIBUTIONS = ("allowed", "private-only")
 LEVELS = ("L0", "L1", "L2", "L3")
 ZIP_EPOCH_MIN = 315532800  # 1980-01-01T00:00:00Z, the earliest ZIP timestamp
@@ -251,8 +252,15 @@ def validate_recipe(recipe):
         check(bool(script), "build.script is required")
         if script:
             check((recipe.dir / script).is_file(), f"build.script {script!r} does not exist next to the recipe")
-        check(build.get("shell") in SHELLS, f"build.shell must be one of {', '.join(SHELLS)}")
-        check(bool(build.get("runner")), "build.runner is required")
+        shell = build.get("shell")
+        runner = build.get("runner")
+        check(shell in SHELLS, f"build.shell must be one of {', '.join(SHELLS)}")
+        if script and shell in SHELLS:
+            suffix = SCRIPT_SUFFIX[shell]
+            check(script.endswith(suffix), f"build.script must end with {suffix} for shell {shell!r}")
+        check(bool(runner), "build.runner is required")
+        if isinstance(runner, str) and runner.startswith("windows"):
+            check(shell == "pwsh", f"windows runners build with pwsh only (runner {runner!r})")
         toolchain = build.get("toolchain")
         check(isinstance(toolchain, dict), "build.toolchain must be a mapping")
         if isinstance(toolchain, dict):
@@ -920,11 +928,15 @@ def main(argv=None):
     sub = parser.add_subparsers(dest="command", required=True)
 
     def common(target):
-        target.add_argument("--package", required=True)
-        target.add_argument("--pkgver")
-        target.add_argument("--pkgrel", type=int)
-        target.add_argument("--arch")
-        target.add_argument("--work")
+        # The workflows export PACKAGE/PKGVER/PKGREL/ARCH/WORK, so they can call
+        # pkgctl without a shell wrapper; explicit flags still win.
+        package = os.environ.get("PACKAGE") or None
+        target.add_argument("--package", default=package, required=package is None)
+        target.add_argument("--pkgver", default=os.environ.get("PKGVER") or None)
+        target.add_argument("--pkgrel", type=int,
+                            default=int(os.environ["PKGREL"]) if os.environ.get("PKGREL") else None)
+        target.add_argument("--arch", default=os.environ.get("ARCH") or None)
+        target.add_argument("--work", default=os.environ.get("WORK") or None)
 
     plan = sub.add_parser("plan")
     common(plan)
