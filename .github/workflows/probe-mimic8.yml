@@ -1,0 +1,47 @@
+name: probe-mimic8
+
+on:
+  workflow_dispatch:
+    inputs:
+      pkgver:
+        description: Upstream version to build (empty keeps the recipe value)
+        type: string
+        required: false
+        default: ""
+      pkgrel:
+        description: Package revision (0 keeps the recipe value)
+        type: number
+        required: false
+        default: 0
+      publish:
+        description: Publish a draft release after the build succeeds
+        type: boolean
+        required: false
+        default: false
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    uses: ./.github/workflows/package.yml
+    with:
+      package: __probe__
+      pkgver: ""
+      pkgrel: 0
+    permissions:
+      contents: read
+      id-token: write
+      attestations: write
+
+  publish:
+    if: inputs.publish
+    needs: build
+    uses: ./.github/workflows/publish.yml
+    with:
+      tag: ${{ needs.build.outputs.tag }}
+      publishable: ${{ needs.build.outputs.publishable }}
+    permissions:
+      contents: write
+      id-token: write
+      attestations: write
