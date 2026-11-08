@@ -1,0 +1,16 @@
+name: probe-mimic3
+on:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  build:
+    uses: ./.github/workflows/package.yml
+    with:
+      package: __probe__
+      pkgver: ${{ inputs.pkgver }}
+      pkgrel: ${{ inputs.pkgrel }}
+    permissions:
+      contents: read
+      id-token: write
+      attestations: write
