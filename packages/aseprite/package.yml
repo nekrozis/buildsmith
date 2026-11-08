@@ -42,6 +42,7 @@ build:
     - "LAF_BACKEND=skia with the pinned aseprite/skia prebuilt library"
     - "Sentry, news, updater and DRM disabled"
     - "whole-program optimisation (/GL + /LTCG) is off: it inflates app-lib.lib past lib.exe's 4 GiB archive limit (LNK1248) with MSVC 14.51 on windows-2025-vs2026"
+    - "OpenSSL is disabled rather than deleted from the runner: the system copy under C:/Program Files is never found (CMAKE_DISABLE_FIND_PACKAGE_OpenSSL), and dumpbin /dependents fails the build if libcrypto/libssl still shows up in the exe"
 
 stage:
   - from: ${out}
