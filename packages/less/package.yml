@@ -1,0 +1,55 @@
+name: less
+summary: A terminal pager
+homepage: https://www.greenwoodsoftware.com/less/
+license: GPL-3.0-only
+
+version:
+  pkgver: "710"
+  pkgrel: 1
+
+arch: [amd64v3]
+
+# The release tarball, not the git tag: upstream ships the generated files
+# (configure, help.c, funcs.h, lessmsg.inc) only in the tarball, and the git
+# tree for the same release needs buildgen run first. Tag v710 and v710-rel both
+# peel to 050dff7ed495bd8e1d6ef09d37feb1ce0d351534, which is what this tarball
+# contains.
+sources:
+  - type: url
+    url: https://www.greenwoodsoftware.com/less/less-${pkgver}.tar.gz
+    sha256: d1008fb78dcae1323ddab664bcb352a61f022b1b131bd8018548e021d975ec7a
+    extract: tar.gz
+    dir: less
+
+build:
+  script: build.ps1
+  shell: pwsh
+  runner: windows-2025
+  toolchain:
+    zig: "0.17.1"
+  env:
+    ZIG_TARGET: x86_64-windows-gnu
+    ZIG_CPU: x86_64_v3
+  overrides:
+    - "zig cc instead of MSVC: the compiler, its libc, its linker and the mingw-w64/UCRT headers are one checksummed archive, so no runner image, vcvars or VS install takes part in the result"
+    - "-mcpu=x86_64_v3 for the whole build, where upstream's Makefile.wnm has no architecture flag at all"
+    - "-O2 -DNDEBUG matches Makefile.wnm's /O2 /D NDEBUG; /arch:AVX2 on the MSVC reference build means the same v3 feature level"
+    - "defines.wn is copied to defines.h as Makefile.wnm does, and -DMINGW selects its own mingw branches: no <values.h>, a real unistd.h, a C99 snprintf"
+    - "-DUSE_REGEXP_C selects the vendored regexp.c, which is what Makefile.wnm gets by default under MSVC and what makes search.c provide regerror()"
+    - "-s drops debug info; it also stops zig from adding a PDB whose identifier changes with the build directory"
+    - "release tarball only: lesskey.exe is built by Makefile.aut on Unix, and the reference Windows package ships less.exe alone"
+
+stage:
+  - from: ${out}
+    to: bin
+
+smoke:
+  - [bin/less.exe, --version]
+
+reproducibility:
+  level: L2
+  ab: true
+  cross_env: false
+  verified_on: [windows-2025]
+
+distribution: allowed

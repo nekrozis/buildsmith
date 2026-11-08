@@ -251,6 +251,38 @@ class PlanTest(PkgctlTestCase):
         self.assertEqual(plan["full"], "1.0.0-3")
 
 
+class ToolchainTest(PkgctlTestCase):
+    def write_zig_recipe(self, version="0.17.1"):
+        source, commit = self.make_source_repo()
+        directory = self.write_recipe(commit=commit, source_url=str(source))
+        recipe = directory / "package.yml"
+        recipe.write_text(recipe.read_text(encoding="utf-8").replace(
+            "toolchain:\n    {}", f'toolchain:\n    zig: "{version}"'), encoding="utf-8")
+        return directory
+
+    def test_plan_records_the_zig_pin(self):
+        self.write_zig_recipe()
+        plan = json.loads(self.pkgctl("plan", "--package", "demo").stdout)
+        self.assertEqual(plan["toolchain"]["zig"], "0.17.1")
+        self.assertFalse(plan["vcvars"])
+
+    def test_unpinned_zig_version_is_refused(self):
+        # A compiler is the one input a recipe cannot hash in sources, so a
+        # version missing from the download table must fail instead of being
+        # fetched on trust.
+        self.write_zig_recipe("0.0.0")
+        result = self.pkgctl("toolchain", "--package", "demo",
+                             "--dest", str(self.tmp / "toolchain"), expect=1)
+        self.assertIn("is not pinned", result.stderr)
+
+    def test_package_without_a_zig_pin_is_refused(self):
+        source, commit = self.make_source_repo()
+        self.write_recipe(commit=commit, source_url=str(source))
+        result = self.pkgctl("toolchain", "--package", "demo",
+                             "--dest", str(self.tmp / "toolchain"), expect=1)
+        self.assertIn("does not pin toolchain.zig", result.stderr)
+
+
 class PackagingTest(PkgctlTestCase):
     def test_roundtrip_build_package_verify(self):
         source, commit = self.make_source_repo()
@@ -496,10 +528,15 @@ class RepositoryRecipesTest(unittest.TestCase):
                                 cwd=str(REPO), text=True, capture_output=True, check=False)
         self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
 
-    def test_every_recipe_pins_a_commit(self):
+    def test_every_source_is_pinned(self):
+        # A recipe may clone a git source or take a release tarball, but each
+        # source has to be pinned: a commit for git, a sha256 for a URL.
         for recipe in sorted((REPO / "packages").glob("*/package.yml")):
             text = recipe.read_text(encoding="utf-8")
-            self.assertIn("commit:", text, recipe)
+            if "- type: git" in text:
+                self.assertIn("commit:", text, recipe)
+            if "- type: url" in text:
+                self.assertIn("sha256:", text, recipe)
 
 
 if __name__ == "__main__":

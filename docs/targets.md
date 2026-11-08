@@ -23,6 +23,14 @@ client code changes.
 | Rust | `-C target-cpu=x86-64-v3` | exactly x86-64-v3, per rustc's target cub |
 | MSVC | `/arch:AVX2` | the v3 feature level, see below |
 | MSVC | `/favor:AMD64` etc. | none of these raise the requirement |
+| zig cc | `-mcpu=x86_64_v3` | exactly x86-64-v3: clang's `x86-64-v3` CPU model for the target |
+| zig cc | `-target x86_64-windows-gnu` | not a level: the mingw-w64 ABI on the UCRT, see below |
+
+`-mcpu=x86_64_v3` also leaves the *target* alone: `x86_64-windows-gnu` is the
+mingw-w64 ABI on the UCRT, i.e. the same runtime family the MSVC packages
+require, not the legacy msvcrt mingw. A `less.exe` built this way imports only
+`api-ms-win-crt-*` plus `USER32`/`SHELL32`, with no libgcc or libwinpthread-1
+DLL, so it needs no mingw installation on the machine that runs it.
 
 ### MSVC `/arch:AVX2` is a level, not a single instruction set
 
