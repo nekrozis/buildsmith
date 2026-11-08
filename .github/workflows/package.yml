@@ -125,6 +125,15 @@ jobs:
         uses: ilammy/msvc-dev-cmd@7defe9254715b088f12dddd9942945a3d75cdad5 # v1.9.0
         with:
           arch: x64
+      # zig is the one compiler that is not installed by a setup action: it is a
+      # single checksummed archive, so pkgctl downloads and verifies it here and
+      # the path it prints goes on PATH for the build step.
+      - name: Set up zig
+        if: fromJSON(needs.plan.outputs.plan).toolchain.zig != ''
+        run: |
+          $zig = python tools/pkgctl.py toolchain --dest "$env:RUNNER_TEMP/toolchain"
+          if ($LASTEXITCODE -ne 0) { throw "zig setup failed" }
+          Add-Content -Path $env:GITHUB_PATH -Value $zig
       - name: Resolve sources
         run: python tools/pkgctl.py fetch --id $env:BUILD_ID --work "$env:RUNNER_TEMP/work"
       - name: Build

@@ -79,7 +79,7 @@ Every archive ships next to a `<archive>.manifest.json` containing:
 `archive{file,format,root,size,sha256}`, `files[{path,size,sha256,mode}]`,
 `sources[{type,url,tag,commit,sha256}]`,
 `build{script,shell,runner,recipe_sha256,script_sha256,env,overrides}`,
-`toolchain{go,rust,msvc,runner,runner_image}`,
+`toolchain{go,rust,msvc,zig,runner,runner_image}`,
 `reproducibility{level,ab,ab_verified,ab_sha256,cross_env,verified_on}`,
 `source_date_epoch`, and `provenance` when an attestation was attached.
 
@@ -102,6 +102,15 @@ uses the repository's compiler instead. The artifact is ours, not upstream's, so
 inheriting their compiler choice buys nothing and only fragments the toolchain
 across packages: `nushell` pins an older rustc, we build it with the repository's
 pinned stable rustc, the way a distribution does.
+
+**zig is downloaded by us, not by the runner.** `toolchain.zig: "0.17.1"` is
+resolved through a table inside `pkgctl` that carries the archive URL and its
+sha256; a version absent from that table is refused before anything runs, so a
+recipe cannot silently pick up an unpinned compiler. The archive is verified
+byte for byte, unpacked under the build's own directory and put on `PATH` for
+the build step. That makes the zig compiler *stronger* than an MSVC pin:
+`windows-2025` refreshes can change the MSVC toolset under an unchanged recipe,
+while a zig package gets the same compiler on any x64 machine, Windows or Linux.
 
 **A toolchain update does not rebuild anything.** Bumping a compiler is a
 `pkgrel` bump, made deliberately:
@@ -127,6 +136,11 @@ still reviewed as a normal batch of releases.
   `toolchain.runner_image` and verify against a pinned image label instead.
 - **Skia is a prebuilt binary** from `aseprite/skia`. It is pinned by sha256, so
   it cannot change under us, but its own reproducibility is out of our hands.
+- **zig's target libc is shipped inside the compiler.** `x86_64-windows-gnu`
+  links against zig's own copy of mingw-w64 and the UCRT headers, so the result
+  does not depend on any sysroot installed on the runner. The zig archive itself
+  is pinned by sha256, so a rebuild in a different directory or on a different
+  image has no moving part left except the host CPU.
 - **Signing.** Authenticode and hashing are mutually exclusive: signing rewrites
   the file. If packages are ever code-signed, sign `SHA256SUMS` or publish a
   separate signed copy with its own digest. Nothing in this repository signs

@@ -32,7 +32,7 @@ build:
   shell: pwsh                   # pwsh; bash is only allowed off Windows
   runner: windows-2025          # explicit image, never *-latest
   toolchain:
-    go: "1.27.3"              # go | rust | msvc, all optional
+    go: "1.27.3"              # go | rust | msvc | zig, all optional
   env:                        # exported to the build script
     GOAMD64: v3
   overrides:                  # documented deviations from upstream defaults

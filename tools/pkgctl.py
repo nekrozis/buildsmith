@@ -31,6 +31,24 @@ DISTRIBUTIONS = ("allowed", "private-only")
 LEVELS = ("L0", "L1", "L2", "L3")
 ZIP_EPOCH_MIN = 315532800  # 1980-01-01T00:00:00Z, the earliest ZIP timestamp
 
+# A compiler is the one input a recipe cannot pin by hash in its sources: the
+# runner downloads it before the build starts. The digests come from
+# https://ziglang.org/download/index.json and are the whole trust anchor for a
+# zig-based package, so a version without an entry here is refused rather than
+# fetched.
+ZIG_DOWNLOADS = {
+    "0.17.1": {
+        "windows-x86_64": (
+            "zig-x86_64-windows-0.17.1.zip",
+            "b03f477a1943673e02aca0f570e8030dffd536ce1f45cbc4d3326ec31159562e",
+        ),
+        "linux-x86_64": (
+            "zig-x86_64-linux-0.17.1.tar.xz",
+            "3581863e3cbcfd0fce0efc682ce7e9e93da96668a977791d356a26d2a7e9b17a",
+        ),
+    },
+}
+
 PLACEHOLDER = re.compile(r"\$\{([a-z0-9_]+)\}")
 NAME_RE = re.compile(r"^[a-z][a-z0-9-]*$")
 PKGVER_RE = re.compile(r"^[0-9][0-9A-Za-z.+]*$")
@@ -268,7 +286,7 @@ def validate_recipe(recipe):
         check(isinstance(toolchain, dict), "build.toolchain must be a mapping")
         if isinstance(toolchain, dict):
             for key in toolchain:
-                check(key in ("go", "rust", "msvc"), f"unknown toolchain {key!r}")
+                check(key in ("go", "rust", "msvc", "zig"), f"unknown toolchain {key!r}")
             for key, value in toolchain.items():
                 if value is not None:
                     check(isinstance(value, str) and bool(value), f"toolchain.{key} must be a version string")
@@ -369,7 +387,7 @@ def cmd_plan(args):
         "artifact": resolved["artifact"],
         "runner": build["runner"],
         "shell": build["shell"],
-        "toolchain": {key: toolchain.get(key) for key in ("go", "rust", "msvc")},
+        "toolchain": {key: toolchain.get(key) for key in ("go", "rust", "msvc", "zig")},
         "vcvars": toolchain.get("msvc") is not None,
         "publishable": recipe["distribution"] == "allowed",
         "reproducibility": recipe["reproducibility"],
@@ -542,6 +560,60 @@ def cmd_fetch(args):
     log(f"sources ready in {paths['src']}")
 
 
+def zig_asset(version):
+    platform = "windows-x86_64" if os.name == "nt" else "linux-x86_64"
+    entry = ZIG_DOWNLOADS.get(version, {}).get(platform)
+    if not entry:
+        pinned = ", ".join(sorted(ZIG_DOWNLOADS)) or "none"
+        raise Fail(
+            f"zig {version} is not pinned for {platform}; pinned versions: {pinned}"
+        )
+    name, digest = entry
+    return f"https://ziglang.org/download/{version}/{name}", digest, name
+
+
+def cmd_toolchain(args):
+    # The compiler is downloaded before the build, so it is materialised and
+    # verified in its own step: a wrong or missing archive must fail before any
+    # compilation, and the path it prints is what the workflow appends to PATH.
+    root = repo_root()
+    recipe = load_recipe(args.package, root)
+    version = (recipe["build"].get("toolchain") or {}).get("zig")
+    if not version:
+        raise Fail(f"{recipe['name']} does not pin toolchain.zig")
+    url, expected, name = zig_asset(version)
+
+    cached = root / "work" / "cache" / expected
+    if not cached.is_file() or sha256_file(cached) != expected:
+        log(f"downloading {url}")
+        download(url, cached)
+        actual = sha256_file(cached)
+        if actual != expected:
+            cached.unlink(missing_ok=True)
+            raise Fail(f"sha256 mismatch for {url}: expected {expected}, got {actual}")
+
+    install = Path(args.dest) / f"zig-{version}"
+    if install.exists():
+        shutil.rmtree(install)
+    install.mkdir(parents=True, exist_ok=True)
+    if name.endswith(".zip"):
+        with zipfile.ZipFile(cached) as archive:
+            archive.extractall(install)
+    else:
+        with tarfile.open(cached, "r:xz") as archive:
+            try:
+                archive.extractall(install, filter="data")
+            except TypeError:  # Python < 3.12
+                archive.extractall(install)
+
+    binary = "zig.exe" if os.name == "nt" else "zig"
+    matches = sorted(install.rglob(binary))
+    if len(matches) != 1:
+        raise Fail(f"{name} contains {len(matches)} copies of {binary}")
+    log(f"zig {version} ready in {matches[0].parent}")
+    print(str(matches[0].parent))
+
+
 def cmd_build(args):
     root = repo_root()
     recipe = load_recipe(args.package, root)
@@ -695,7 +767,7 @@ def cmd_package(args):
             "overrides": recipe["build"].get("overrides", []),
         },
         "toolchain": {
-            **{key: recipe["build"].get("toolchain", {}).get(key) for key in ("go", "rust", "msvc")},
+            **{key: recipe["build"].get("toolchain", {}).get(key) for key in ("go", "rust", "msvc", "zig")},
             "runner": recipe["build"]["runner"],
             "runner_image": os.environ.get("ImageVersion"),
         },
@@ -1020,6 +1092,11 @@ def main(argv=None):
     common(fetch)
     fetch.add_argument("--id", default="a")
     fetch.set_defaults(func=cmd_fetch)
+
+    toolchain = sub.add_parser("toolchain")
+    common(toolchain)
+    toolchain.add_argument("--dest", required=True)
+    toolchain.set_defaults(func=cmd_toolchain)
 
     build = sub.add_parser("build")
     common(build)
