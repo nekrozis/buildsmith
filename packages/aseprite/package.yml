@@ -29,12 +29,13 @@ build:
   toolchain:
     msvc: "17"
   env:
-    _LINK_: "/LTCG /INCREMENTAL:NO /OPT:REF,ICF /Brepro"
+    _LINK_: "/INCREMENTAL:NO /OPT:REF,ICF /Brepro"
   overrides:
-    - "MSVC /arch:AVX2 (implies AVX/SSE4.2 and enables FMA), /fp:fast, /GL + /LTCG, static /MT CRT"
+    - "MSVC /arch:AVX2 (implies AVX/SSE4.2 and enables FMA), /fp:fast, static /MT CRT"
     - "optimisation lives in CMAKE_C_FLAGS_RELEASE/CMAKE_CXX_FLAGS_RELEASE, not in CL/_CL_: those also hit CMake's configure-time try-compiles and collide with /RTC1"
     - "LAF_BACKEND=skia with the pinned aseprite/skia prebuilt library"
     - "Sentry, news, updater and DRM disabled"
+    - "whole-program optimisation (/GL + /LTCG) is off: it inflates app-lib.lib past lib.exe's 4 GiB archive limit (LNK1248) with MSVC 14.51 on windows-2025-vs2026"
 
 stage:
   - from: ${out}
