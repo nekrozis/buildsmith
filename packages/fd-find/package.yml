@@ -1,0 +1,51 @@
+name: fd-find
+summary: Simple, fast and user-friendly alternative to find
+homepage: https://github.com/sharkdp/fd
+license: MIT OR Apache-2.0
+
+version:
+  pkgver: 10.5.2
+  pkgrel: 1
+
+arch: [amd64v3]
+
+sources:
+  - type: git
+    url: https://github.com/sharkdp/fd.git
+    tag: v${pkgver}
+    commit: b2a287b3993768e0ec52f0852916917f23fb2a38
+    dir: fd
+
+build:
+  script: build.ps1
+  shell: pwsh
+  runner: windows-2025
+  toolchain:
+    rust: "1.99.1"
+  env:
+    RUSTUP_TOOLCHAIN: "1.99.1"
+    RUSTFLAGS: "-C target-cpu=x86-64-v3 -C target-feature=+crt-static"
+    _LINK_: "/INCREMENTAL:NO /OPT:REF,ICF /Brepro"
+  overrides:
+    - "RUSTFLAGS=-C target-cpu=x86-64-v3 -C target-feature=+crt-static, upstream release builds windows/amd64 with the default x86-64 baseline"
+    - "upstream .cargo/config.toml is dropped; its +crt-static flag is kept explicitly in RUSTFLAGS so the exe has no vcruntime DLL dependency"
+    - "profile make: inherits release, lto=fat, codegen-units=1, strip=debuginfo, no incremental"
+
+stage:
+  - from: ${out}
+    to: bin
+
+smoke:
+  - [bin/fd.exe, --version]
+
+reproducibility:
+  level: L2
+  ab: true
+  cross_env: false
+  verified_on: [windows-2025]
+
+distribution: allowed
+notes: >-
+  Package name follows Debian and Fedora (fd-find); the executable keeps the
+  upstream name fd.exe. Built from source with the repository's pinned Rust
+  toolchain and static CRT.

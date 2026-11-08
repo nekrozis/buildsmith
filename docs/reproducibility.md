@@ -29,6 +29,8 @@ reproducibility:
 | gopls | L3 | Go toolchain, `-trimpath -buildvcs=false`, no cgo; measured identical on windows-2022 / windows-2025 / local |
 | lazygit | L3 | same shape as gopls, version metadata injected from `SOURCE_DATE_EPOCH` |
 | nushell | L2 | Rust + MSVC; `wshim` showed UCRT import-set drift between runner images |
+| ripgrep | L2 | Rust + MSVC, PCRE2 statically linked; A/B and cross-image checks not yet run |
+| fd-find | L2 | Rust + MSVC; A/B and cross-image checks not yet run |
 | aseprite | L2 | MSVC + CMake + a prebuilt Skia binary |
 
 `cross_env: true` is only written after an actual cross-image comparison. Until
