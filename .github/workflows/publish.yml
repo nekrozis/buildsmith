@@ -1,0 +1,62 @@
+name: publish
+
+on:
+  workflow_call:
+    inputs:
+      tag:
+        description: Release tag, <package>/v<pkgver>-<pkgrel>
+        type: string
+        required: true
+      publishable:
+        description: "false for packages whose licence forbids redistribution"
+        type: string
+        required: true
+
+permissions:
+  contents: read
+
+jobs:
+  release:
+    if: inputs.publishable == 'true'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    environment: release
+    permissions:
+      contents: write
+      id-token: write
+      attestations: write
+    env:
+      PYTHON: python
+      TAG: ${{ inputs.tag }}
+      REPO: ${{ github.repository }}
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
+        with:
+          python-version: "3.13"
+          cache: pip
+          cache-dependency-path: tools/requirements.txt
+      - name: Install tooling
+        run: python -m pip install --disable-pip-version-check -r tools/requirements.txt
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: package
+          path: dist
+      - name: Re-verify archives before publishing
+        run: |
+          set -euo pipefail
+          for manifest in dist/*.manifest.json; do
+            python tools/pkgctl.py verify --manifest "${manifest}"
+          done
+      - name: Upload draft release
+        run: |
+          set -euo pipefail
+          if gh release view "${TAG}" --repo "${REPO}" >/dev/null 2>&1; then
+            echo "::error::release ${TAG} already exists; bump pkgrel instead of overwriting assets"
+            exit 1
+          fi
+          gh release create "${TAG}" --repo "${REPO}" --draft --generate-notes --title "${TAG}"
+          gh release upload "${TAG}" --repo "${REPO}" \
+            dist/*.zip dist/*.manifest.json dist/SHA256SUMS
+          echo "draft release ${TAG} created; review and publish it manually"

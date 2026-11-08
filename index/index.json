@@ -1,0 +1,9 @@
+{
+  "packages": {},
+  "repository": {
+    "base_url": null,
+    "name": "buildsmith",
+    "repo": "nekrozis/buildsmith"
+  },
+  "schema": 1
+}

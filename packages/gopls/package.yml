@@ -1,0 +1,47 @@
+name: gopls
+summary: Go language server
+homepage: https://go.dev/gopls
+license: BSD-3-Clause
+
+version:
+  pkgver: 0.24.0
+  pkgrel: 1
+
+arch: [amd64v3]
+
+sources:
+  - type: git
+    url: https://github.com/golang/tools.git
+    tag: gopls/v${pkgver}
+    commit: 1f9922d1dcc5836d5c5bcb552c8fed230f885372
+    dir: tools
+
+build:
+  script: build.sh
+  shell: bash
+  runner: windows-2025
+  toolchain:
+    go: "1.27.3"
+  env:
+    CGO_ENABLED: "0"
+    GOOS: windows
+    GOARCH: amd64
+    GOAMD64: v3
+    GOFLAGS: "-buildvcs=false -trimpath"
+  overrides:
+    - "GOAMD64=v3, upstream publishes no windows/amd64 binary and its default is v1"
+
+stage:
+  - from: ${out}
+    to: bin
+
+smoke:
+  - [bin/gopls.exe, version]
+
+reproducibility:
+  level: L3
+  ab: true
+  cross_env: true
+  verified_on: [windows-2025]
+
+distribution: allowed

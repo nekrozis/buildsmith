@@ -1,0 +1,63 @@
+name: index
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "0 3 * * 1"
+
+permissions:
+  contents: write
+
+concurrency:
+  group: index
+  cancel-in-progress: true
+
+jobs:
+  refresh:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    env:
+      PYTHON: python
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
+        with:
+          python-version: "3.13"
+          cache: pip
+          cache-dependency-path: tools/requirements.txt
+      - name: Install tooling
+        run: python -m pip install --disable-pip-version-check -r tools/requirements.txt
+      - name: Collect published assets
+        run: |
+          set -euo pipefail
+          mkdir -p dist
+          # --clobber only affects the local workspace, never release assets.
+          while read -r tag; do
+            [[ -z "${tag}" ]] && continue
+            gh release download "${tag}" --repo "${GITHUB_REPOSITORY}" \
+              --pattern '*.zip' --pattern '*.manifest.json' --dir dist --clobber
+          done < <(gh release list --repo "${GITHUB_REPOSITORY}" --limit 200 \
+                     --json tagName --jq '.[].tagName')
+          ls -l dist
+      - name: Generate index
+        run: |
+          set -euo pipefail
+          python tools/pkgctl.py index \
+            --manifests dist \
+            --out index/index.json \
+            --repo "${GITHUB_REPOSITORY}" \
+            --verify
+          head -40 index/index.json
+      - name: Commit index
+        run: |
+          set -euo pipefail
+          if [[ -z "$(git status --porcelain -- index/index.json)" ]]; then
+            echo "index is up to date"
+            exit 0
+          fi
+          git config user.name "buildsmith"
+          git config user.email "buildsmith@users.noreply.github.com"
+          git add index/index.json
+          git commit -m "index: refresh from published releases"
+          git push

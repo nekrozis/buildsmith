@@ -1,0 +1,50 @@
+name: nushell
+summary: A new type of shell
+homepage: https://www.nushell.sh
+license: MIT
+
+version:
+  pkgver: 0.116.1
+  pkgrel: 1
+
+arch: [amd64v3]
+
+sources:
+  - type: git
+    url: https://github.com/nushell/nushell.git
+    tag: ${pkgver}
+    commit: b632ef0994e07b5176ec45171e8cee2c127c5563
+    dir: nushell
+
+build:
+  script: build.sh
+  shell: bash
+  runner: windows-2025
+  toolchain:
+    rust: "1.99.1"
+  env:
+    RUSTUP_TOOLCHAIN: "1.99.1"
+    RUSTFLAGS: "-C target-cpu=x86-64-v3"
+    CL: "/fp:fast"
+    _CL_: "/arch:AVX2 /O2 /Ob2 /DNDEBUG"
+    _LINK_: "/INCREMENTAL:NO /OPT:REF,ICF /Brepro"
+  overrides:
+    - "RUSTFLAGS=-C target-cpu=x86-64-v3"
+    - "MSVC /arch:AVX2 (implies AVX/SSE4.2 and enables FMA), /fp:fast, /GL, /MT"
+    - "profile make: inherits release, lto=fat, codegen-units=1, panic=unwind, no incremental"
+    - "upstream rust-toolchain.toml and .cargo/ dropped, built with stable rustc instead"
+
+stage:
+  - from: ${out}
+    to: bin
+
+smoke:
+  - [bin/nu.exe, --version]
+
+reproducibility:
+  level: L2
+  ab: false
+  cross_env: false
+  verified_on: [windows-2025]
+
+distribution: allowed

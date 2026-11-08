@@ -1,0 +1,60 @@
+name: aseprite
+summary: Animated sprite editor and pixel art tool
+homepage: https://www.aseprite.org
+license: Aseprite-EULA
+
+version:
+  pkgver: 1.3.18.6
+  pkgrel: 1
+
+arch: [amd64v3]
+
+sources:
+  - type: git
+    url: https://github.com/aseprite/aseprite.git
+    tag: v${pkgver}
+    commit: 331e898ef405d919539c03fd1675691cfa16c3a3
+    dir: aseprite
+    submodules: true
+  - type: url
+    url: https://github.com/aseprite/skia/releases/download/m124-08a5439a6b/Skia-Windows-Release-x64.zip
+    sha256: 5a371a4b2819bb4eb96e36cd75fa623585e1d5477e253a970302b6f2471b6934
+    extract: zip
+    dir: skia
+
+build:
+  script: build.ps1
+  shell: pwsh
+  runner: windows-2025
+  toolchain:
+    msvc: "17"
+  env:
+    CL: "/fp:fast"
+    _CL_: "/arch:AVX2 /O2 /Ob2 /DNDEBUG"
+    CFLAGS: "/O2 /Ob2 /GL /MT /DNDEBUG"
+    CXXFLAGS: "/O2 /Ob2 /GL /MT /DNDEBUG"
+    _LINK_: "/LTCG /INCREMENTAL:NO /OPT:REF,ICF /Brepro"
+  overrides:
+    - "MSVC /arch:AVX2 (implies AVX/SSE4.2 and enables FMA), /fp:fast, /GL, /MT"
+    - "LAF_BACKEND=skia with the pinned aseprite/skia prebuilt library"
+    - "Sentry, news, updater and DRM disabled"
+
+stage:
+  - from: ${out}
+    to: bin
+
+smoke:
+  - [bin/aseprite.exe, --version]
+
+reproducibility:
+  level: L2
+  ab: false
+  cross_env: false
+  verified_on: [windows-2025]
+
+distribution: private-only
+notes: >-
+  The Aseprite EULA allows building from source for personal use but does not
+  permit redistributing compiled binaries. This recipe is kept so the build can
+  be reproduced locally; it is excluded from the public index and must not be
+  published to any mirror.

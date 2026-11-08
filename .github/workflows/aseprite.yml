@@ -1,0 +1,34 @@
+name: aseprite
+
+# Aseprite's EULA permits building from source but not redistributing the
+# resulting binaries, so the recipe is marked private-only and this workflow
+# never publishes. It exists to reproduce a local build in CI.
+
+on:
+  workflow_dispatch:
+    inputs:
+      pkgver:
+        description: Upstream version to build (empty keeps the recipe value)
+        type: string
+        required: false
+        default: ""
+      pkgrel:
+        description: Package revision (0 keeps the recipe value)
+        type: number
+        required: false
+        default: 0
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    uses: ./.github/workflows/package.yml
+    with:
+      package: aseprite
+      pkgver: ${{ inputs.pkgver }}
+      pkgrel: ${{ inputs.pkgrel }}
+    permissions:
+      contents: read
+      id-token: write
+      attestations: write
