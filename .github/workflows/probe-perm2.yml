@@ -1,0 +1,10 @@
+name: probe-perm2
+on:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  call:
+    uses: ./.github/workflows/probe-called-perm2.yml
+    with:
+      package: __probe__
