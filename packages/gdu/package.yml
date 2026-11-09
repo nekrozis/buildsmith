@@ -1,0 +1,55 @@
+name: gdu
+summary: Pretty fast disk usage analyzer written in Go
+homepage: https://github.com/dundee/gdu
+license: MIT
+
+version:
+  pkgver: 5.39.0
+  pkgrel: 1
+
+arch: [amd64v3]
+
+sources:
+  - type: git
+    url: https://github.com/dundee/gdu.git
+    tag: v${pkgver}
+    commit: e09ee9a20d1d9351e90e84ec3f86ab7bbcddbeea
+    dir: gdu
+
+build:
+  script: build.ps1
+  shell: pwsh
+  runner: windows-2025
+  toolchain:
+    go: "1.27.3"
+  env:
+    CGO_ENABLED: "0"
+    GOOS: windows
+    GOARCH: amd64
+    GOAMD64: v3
+    GOFLAGS: "-buildvcs=false -trimpath -pgo=default.pgo"
+  overrides:
+    - "GOAMD64=v3, upstream build-all emits windows/amd64 at the default v1"
+    - "PGO enabled with the repository's own default.pgo, as the upstream Makefile build target does; the profile is pinned by the commit and the official release binaries are built without it"
+    - "buildmode left at the Go default instead of upstream's -buildmode=pie; PIE on windows/amd64 changes the emitted binary without a user-visible gain"
+    - "build.Version/Built time/Built user are injected from the recipe and SOURCE_DATE_EPOCH; upstream derives them from git describe and date, which would break reproducibility"
+    - "the committed webui/dist is embedded as shipped; the React frontend is not rebuilt, so Node.js is not part of the toolchain"
+
+stage:
+  - from: ${out}
+    to: bin
+
+smoke:
+  - [bin/gdu.exe, --version]
+
+reproducibility:
+  level: L2
+  ab: true
+  cross_env: false
+  verified_on: [windows-2025]
+
+distribution: allowed
+notes: >-
+  Built with PGO from the profile committed in the source tree, with the
+  web UI embedded. Version metadata is fixed at build time, so --version is
+  byte-stable for a given recipe.

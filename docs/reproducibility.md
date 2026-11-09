@@ -32,6 +32,7 @@ reproducibility:
 | ripgrep | L2 | Rust + MSVC, PCRE2 statically linked; A/B identical on windows-2025, cross-image not measured |
 | fd-find | L2 | Rust + MSVC; A/B identical on windows-2025, cross-image not measured |
 | aseprite | L2 | MSVC + CMake + a prebuilt Skia binary |
+| gdu | L2 | Go toolchain, PGO from the committed `default.pgo`; A/B identical locally, cross-image not measured |
 
 `cross_env: true` is only written after an actual cross-image comparison. Until
 then the honest value is `false`, and the manifest says so.
