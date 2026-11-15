@@ -130,10 +130,16 @@ still reviewed as a normal batch of releases.
 
 ## Known weak points
 
-- **MSVC is not exactly pinnable.** `toolchain.msvc: "17"` plus a pinned runner
+- **MSVC is not exactly pinnable.** `toolchain.msvc: "18"` plus a pinned runner
   image is the closest thing available without shipping a VS installer manifest.
   The manifest records the image version, and a cross-image rebuild is expected
   to differ (`L2`, not a bug).
+- **The Windows image label moves under the recipes.** `windows-2025` used to be
+  the VS 2022 image and now resolves to `windows-2025-vs2026`, whose Visual
+  Studio 2026 is the only install there; the only VS 2022 image left is
+  `windows-2022`, on Server 2022. A recipe names the label, so the Visual Studio
+  release can change without a commit here: `toolchain.runner_image` records
+  what actually ran.
 - **MSVC toolset updates inside an image.** `windows-2025` images are refreshed
   monthly. If a build must be bit-identical to a previous one, record
   `toolchain.runner_image` and verify against a pinned image label instead.

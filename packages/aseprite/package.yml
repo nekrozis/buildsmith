@@ -33,7 +33,7 @@ build:
   shell: pwsh
   runner: windows-2025
   toolchain:
-    msvc: "17"
+    msvc: "18"
   env:
     _LINK_: "/INCREMENTAL:NO /OPT:REF,ICF /Brepro"
   overrides:

@@ -22,7 +22,7 @@ build:
   runner: windows-2025
   toolchain:
     rust: "1.99.1"
-    msvc: "17"
+    msvc: "18"
   env:
     RUSTUP_TOOLCHAIN: "1.99.1"
     RUSTFLAGS: "-C target-cpu=x86-64-v3 -C target-feature=+crt-static"
