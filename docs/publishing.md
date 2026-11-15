@@ -54,7 +54,7 @@ never edited by hand:
           "sha256": "…",
           "manifest_url": "…", "manifest_sha256": "…",
           "source_date_epoch": 1704164645,
-          "toolchain": {"go": "1.27.3", "runner": "windows-2025", "runner_image": "20251020.1.0"},
+          "toolchain": {"go": "1.27.4", "runner": "windows-2025", "runner_image": "20251020.1.0"},
           "reproducibility": {"level": "L3", "ab_verified": true, "cross_env": true}
         }
       ]

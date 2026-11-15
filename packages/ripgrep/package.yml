@@ -21,10 +21,10 @@ build:
   shell: pwsh
   runner: windows-2025
   toolchain:
-    rust: "1.99.1"
+    rust: "1.100.0"
     msvc: "18"
   env:
-    RUSTUP_TOOLCHAIN: "1.99.1"
+    RUSTUP_TOOLCHAIN: "1.100.0"
     RUSTFLAGS: "-C target-cpu=x86-64-v3 -C target-feature=+crt-static"
     _LINK_: "/INCREMENTAL:NO /OPT:REF,ICF /Brepro"
   overrides:

@@ -21,7 +21,7 @@ build:
   shell: pwsh
   runner: windows-2025
   toolchain:
-    go: "1.27.3"
+    go: "1.27.4"
   env:
     CGO_ENABLED: "0"
     GOOS: windows

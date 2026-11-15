@@ -95,7 +95,7 @@ that value, not the `windows-2025` label, is the meaningful pin.
 
 ## Toolchain policy
 
-**Compilers are pinned exactly** (`go: "1.27.3"`, `rust: "1.99.1"`). Floating
+**Compilers are pinned exactly** (`go: "1.27.4"`, `rust: "1.100.0"`). Floating
 `stable` was rejected: it silently changes the bytes of an unchanged `pkgver`,
 which destroys both A/B comparison and any claim about a released archive.
 
