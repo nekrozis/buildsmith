@@ -130,13 +130,19 @@ still reviewed as a normal batch of releases.
 
 ## Known weak points
 
-- **MSVC is bounded, not pinned.** `toolchain.msvc: "17"` is a range, not a
-  version: `.github/scripts/setup-msvc.ps1` passes it to vswhere as `[17.0,18.0)`,
-  so the build stays on Visual Studio 2022 and fails rather than move to a newer
-  release, while the toolset patch (14.44 today) floats with the image. Short of
+- **MSVC is bounded, not pinned.** `toolchain.msvc: "18"` is a range, not a
+  version: `.github/scripts/setup-msvc.ps1` passes it to vswhere as `[18.0,19.0)`,
+  so the build stays on Visual Studio 2026 and fails rather than move to a newer
+  release, while the toolset patch (14.51 today) floats with the image. Short of
   shipping a VS installer manifest, that is the closest thing available. The
   manifest records the image version, and a cross-image rebuild is expected to
   differ (`L2`, not a bug).
+- **The Windows image label moves under the recipes.** `windows-2025` used to be
+  the VS 2022 image and now resolves to `windows-2025-vs2026`, whose Visual
+  Studio 2026 is the only install there; the only VS 2022 image left is
+  `windows-2022`, on Server 2022. A recipe names the label, so the Visual Studio
+  release can change without a commit here: `toolchain.runner_image` records
+  what actually ran.
 - **MSVC toolset updates inside an image.** `windows-2025` images are refreshed
   monthly. If a build must be bit-identical to a previous one, record
   `toolchain.runner_image` and verify against a pinned image label instead.
