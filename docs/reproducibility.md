@@ -89,6 +89,10 @@ For a Windows MSVC recipe that needs byte-identical output:
 - `/experimental:deterministic` implies `/Brepro` and adds warnings for
   non-deterministic macro use. It is undocumented; treat it as a diagnostic,
   not as a stronger determinism mode.
+- **Without `/GL`/`/LTCG`, `/experimental:deterministic` is not required.**
+  Use `/Brepro` on the compiler, static librarian and linker; add path mapping
+  and `/PDBALTPATH` only when paths need normalising. Reserve the experimental
+  flag for a one-off diagnostic investigation, not as a default recipe setting.
 - `/GL`/`/LTCG` adds link-time code generation; deterministic flags do not
   guarantee identical instruction selection between runs. Verify with an A/B
   run and record L0/L1 rather than claiming L2/L3 from flags alone.
