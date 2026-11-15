@@ -33,6 +33,8 @@ build:
   runner: windows-2025          # explicit image, never *-latest
   toolchain:
     go: "1.27.3"              # go | rust | msvc | zig, all optional
+    # msvc is a major version ("18"), not a toolset version: the patch floats
+    # with the runner image.
   env:                        # exported to the build script
     GOAMD64: v3
   overrides:                  # documented deviations from upstream defaults
