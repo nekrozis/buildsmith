@@ -41,14 +41,20 @@ $luajitInclude = Join-Path $luajitRoot 'include'
 New-Item -ItemType Directory -Force $luajitInclude | Out-Null
 Get-ChildItem -Path (Join-Path $luajitRoot 'src') -Filter '*.h' | Copy-Item -Destination $luajitInclude -Force
 
-# megasource has no prebuilt-LuaJIT option. The patch adds
-# MEGA_LUAJIT_PREBUILT_DIR and a dummy luajit target; it does not touch any
-# other dependency.
-$patch = Join-Path $env:PKG_FILES_DIR 'megasource-luajit-prebuilt.patch'
-$marker = Select-String -Path (Join-Path $megaRoot 'CMakeLists.txt') -Pattern 'MEGA_LUAJIT_PREBUILT_DIR' -SimpleMatch -Quiet
-if (-not $marker) {
-  git -C $megaRoot apply --whitespace=nowarn $patch
-  if ($LASTEXITCODE -ne 0) { throw "megasource patch failed with exit code $LASTEXITCODE" }
+# megasource has no prebuilt-LuaJIT option. The first patch adds
+# MEGA_LUAJIT_PREBUILT_DIR and a dummy luajit target; the second lets
+# OpenAL's build-time native-tools configure run under CMake 4.x.
+$patches = @(
+  @{ Path = 'megasource-luajit-prebuilt.patch'; Marker = 'MEGA_LUAJIT_PREBUILT_DIR'; File = 'CMakeLists.txt' },
+  @{ Path = 'openal-native-tools-cmake.patch'; Marker = 'cmake_minimum_required(VERSION 3.5)'; File = 'libs/openal-soft/native-tools/CMakeLists.txt' }
+)
+foreach ($item in $patches) {
+  $marker = Select-String -Path (Join-Path $megaRoot $item.File) -Pattern $item.Marker -SimpleMatch -Quiet
+  if (-not $marker) {
+    $patch = Join-Path $env:PKG_FILES_DIR $item.Path
+    git -C $megaRoot apply --whitespace=nowarn $patch
+    if ($LASTEXITCODE -ne 0) { throw "patch $($item.Path) failed with exit code $LASTEXITCODE" }
+  }
 }
 
 New-Item -ItemType Directory -Force $buildRoot | Out-Null
