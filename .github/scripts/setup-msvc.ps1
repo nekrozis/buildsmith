@@ -113,8 +113,22 @@ foreach ($pair in $pairs) {
 $newPath = ($pairs | Where-Object { $_.Name -ieq 'PATH' } | Select-Object -First 1).Value
 $oldEntries = @($before['PATH'] -split ';' | Where-Object { $_ })
 $added = @($newPath -split ';' | Where-Object { $_ } | Where-Object { $oldEntries -notcontains $_ })
-if ($added.Count -gt 0) {
-    Add-Content -LiteralPath $env:GITHUB_PATH -Value $added
+
+# The 2026 environment also exposes its LLVM toolset (use_x64_llvm=true) and puts
+# that directory on PATH, which makes CMake's compiler search pick clang; clang
+# then reads /arch:AVX2 and /DNDEBUG as file names. The tools directory of the
+# selected toolset goes first so cl.exe and link.exe win.
+$toolsDir = ($pairs | Where-Object { $_.Name -ieq 'VCToolsInstallDir' } | Select-Object -First 1).Value
+$entries = @()
+if ($toolsDir) {
+    $msvcBin = Join-Path -Path $toolsDir -ChildPath 'bin\HostX64\x64'
+    if (Test-Path -LiteralPath $msvcBin) {
+        $entries += $msvcBin
+    }
+}
+$entries += @($added | Where-Object { $_ -ine $msvcBin })
+if ($entries.Count -gt 0) {
+    Add-Content -LiteralPath $env:GITHUB_PATH -Value $entries
 }
 
 $toolset = ($pairs | Where-Object { $_.Name -ieq 'VCToolsVersion' } | Select-Object -First 1).Value
@@ -124,4 +138,4 @@ if (-not $toolset) {
 
 Write-Host "MSVC $Version ($Arch), toolset $toolset, from $install"
 Write-Host ("exported {0} variable(s): {1}" -f $exported.Count, ($exported -join ', '))
-Write-Host ("prepended {0} PATH entry/entries" -f $added.Count)
+Write-Host ("prepended {0} PATH entry/entries, MSVC tools first" -f $entries.Count)
