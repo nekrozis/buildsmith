@@ -62,8 +62,8 @@ repositories, local git fixtures, no network).
   published release assets.
 - `ci.yml` — recipe validation, workflow lint, tool tests.
 
-Workflows run with `contents: read`; write access and the `release`
-environment only exist on the publish job.
+Workflows run with `contents: read`; write access exists only on the publish job
+and the index refresh job, and the `release` environment only on the publish job.
 
 ## Policy
 

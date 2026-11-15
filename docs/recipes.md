@@ -79,6 +79,7 @@ relative to `${src}`.
 | `PKG_STAGE_DIR` | staging tree (managed by pkgctl) |
 | `PKG_FILES_DIR` | copy of `packages/<name>/files/` |
 | `PKG_RECIPE_DIR` | the recipe directory |
+| `PKG_WORK_DIR` | per-build work directory (contains `src`, `out`, `stage`, `files`) |
 | `SOURCE_DATE_EPOCH` | fixed for the run |
 
 Build scripts write into `$env:PKG_OUT_DIR`; they must not touch
