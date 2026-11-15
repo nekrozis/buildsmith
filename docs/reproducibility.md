@@ -74,37 +74,24 @@ is not what this does.
 - No timestamps written by us; version strings that embed a date are derived
   from `SOURCE_DATE_EPOCH`, not from `date`.
 
-### MSVC deterministic parameters (LÖVE 11.5)
+### MSVC determinism
 
-The LÖVE 11.5 build tried the following to make MSVC output reproducible:
+For a Windows MSVC recipe that needs byte-identical output:
 
-- `/experimental:deterministic` and `/Brepro` on the compiler, static librarian
-  and linker;
-- `/pathmap:<PKG_SRC_DIR>=/_/src` and `/pathmap:<PKG_WORK_DIR>=/_/work`, so
-  `__FILE__` and debug paths do not contain `work/a` versus `work/b`;
-- `/PDBALTPATH:%_PDB%` on executable and DLL links;
-- for LuaJIT, a separate `msvcbuild.bat` build receives
-  `/experimental:deterministic` and the same path maps through `CL`, and its
-  copied `LJLINK` gets `/INCREMENTAL:NO /OPT:REF,ICF /Brepro` because the direct
-  `link.exe` call does not consume `_LINK_`.
-
-`/experimental:deterministic` implies `/Brepro`, but it is undocumented. PDBs
-are not deterministic; no PDBs are shipped.
-
-This was not sufficient for LÖVE: two LuaJIT runs still produced `lua51.dll`
-variants differing in one inlined `match_class()` copy, at
-`match_class_map[(cl&0x1f)]`:
-
-```asm
-mov eax, ecx   ; 2 bytes
-mov rax, rcx   ; 3 bytes
-```
-
-The un-inlined `match_class()` copy was identical in both runs. The one-byte
-difference shifts subsequent branch displacements and changes `.pdata`, debug
-GUID and the PE timestamp. This is MSVC backend instruction-selection
-non-determinism, not a path or link-parameter difference. `love` is therefore
-`L0` with A/B disabled until this is resolved.
+- Pass `/Brepro` to the compiler, the static librarian and the linker. Passing
+  it only to the linker does not normalise object-file timestamps.
+- `/Brepro` implies `d1nodatetime`: `__DATE__`, `__TIME__` and
+  `__TIMESTAMP__` are fixed. Do not use those macros as version metadata.
+- Add `/pathmap:<root>=<stable>` for every build root that can appear in
+  `__FILE__` or debug data.
+- Add `/PDBALTPATH:%_PDB%` to links when a PDB path would otherwise be embedded.
+  PDBs are not guaranteed to be deterministic and are not shipped.
+- `/experimental:deterministic` implies `/Brepro` and adds warnings for
+  non-deterministic macro use. It is undocumented; treat it as a diagnostic,
+  not as a stronger determinism mode.
+- `/GL`/`/LTCG` adds link-time code generation; deterministic flags do not
+  guarantee identical instruction selection between runs. Verify with an A/B
+  run and record L0/L1 rather than claiming L2/L3 from flags alone.
 
 ## Manifest fields
 
