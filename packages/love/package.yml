@@ -1,0 +1,63 @@
+name: love
+summary: 2D game framework for Lua
+homepage: https://love2d.org
+license: zlib
+
+version:
+  pkgver: "11.5"
+  pkgrel: 1
+
+arch: [amd64v3]
+
+sources:
+  - type: git
+    url: https://github.com/love2d/love.git
+    tag: ${pkgver}
+    commit: 6eb8d546736d5915a8b5af30b2cf33456dfdcb1a
+    dir: love
+  - type: git
+    url: https://github.com/love2d/megasource.git
+    tag: ${pkgver}
+    commit: 48811d08a8edecea05c117022a38a91dd10f46f6
+    dir: megasource
+
+build:
+  script: build.ps1
+  shell: pwsh
+  runner: windows-2025
+  toolchain:
+    msvc: "18"
+  env:
+    _LINK_: "/INCREMENTAL:NO /OPT:REF,ICF /Brepro"
+  overrides:
+    - "MSVC /arch:AVX2 (x86-64-v3) for all CMake-built modules; upstream Windows builds use the baseline SSE2 target"
+    - "dynamic CRT (/MD) and no CRT files in the archive: target machines need the matching VC++ Redistributable"
+    - "no /fp:fast; the MSVC default /fp:precise is kept for Lua and Box2D floating-point behavior"
+    - "no /GL or /LTCG; CMake interprocedural optimization is left off"
+    - "LuaJIT, SDL2, mpg123 and OpenAL Soft stay DLLs; zlib, libogg, libvorbis, libtheora, FreeType and libmodplug are linked into love.dll"
+    - "the megasource 11.5 layout already provides the intended 2+2 split; no dependency source patch is applied"
+    - "LuaJIT is built by its own msvcbuild.bat and remains baseline; the package is amd64v3 because love.dll and the CMake-built DLLs use /arch:AVX2"
+
+stage:
+  - from: ${out}/bin
+    to: bin
+  - from: ${out}/license.txt
+    to: license.txt
+
+smoke:
+  - [bin/love.exe, --version]
+
+reproducibility:
+  level: L1
+  ab: true
+  cross_env: false
+  verified_on: []
+
+distribution: allowed
+notes: >-
+  LÖVE 11.5, built from the 11.5 tags of love and megasource. LuaJIT, SDL2,
+  mpg123 and OpenAL Soft are shipped as DLLs; zlib, libogg, libvorbis,
+  libtheora, FreeType and libmodplug are linked into love.dll. The Microsoft
+  VC++ runtime is not bundled; install the matching VC++ Redistributable.
+  license.txt is included; mpg123 (LGPL-2.1) and OpenAL Soft (LGPL-2.0+)
+  remain separate DLLs.
