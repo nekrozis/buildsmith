@@ -66,6 +66,9 @@ $configure = @(
   '-S', $megaRoot,
   '-B', $buildRoot,
   '-DCMAKE_BUILD_TYPE=Release',
+  # The 11.5 dependency tree still declares CMake 2.8/3.x minimums;
+  # CMake 4.x rejects <3.5 unless this opt-in is set.
+  '-DCMAKE_POLICY_VERSION_MINIMUM=3.5',
   '-DCMAKE_MSVC_RUNTIME_LIBRARY=MultiThreadedDLL',
   '-DCMAKE_C_FLAGS_RELEASE=/MD /O2 /Ob2 /DNDEBUG /arch:AVX2 /GL',
   '-DCMAKE_CXX_FLAGS_RELEASE=/MD /O2 /Ob2 /DNDEBUG /arch:AVX2 /GL',
