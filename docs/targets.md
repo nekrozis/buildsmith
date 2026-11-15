@@ -58,10 +58,8 @@ Two consequences worth writing down:
 2. **`/arch:AVX2` is not `/arch:AVX` plus a bit.** `/arch:AVX` stops before FMA
    and before 256-bit integer operations, so a `/arch:AVX` build is *not* v3.
 
-Earlier internal notes claimed MSVC had "no equivalent switch" for FMA/BMI and
-that the MSVC packages were therefore "v3 minus FMA/BMI". That was wrong; this
-document supersedes it. The only honest caveat left is that MSVC never promises
-to *use* every v3 instruction, only that it will not exceed the level.
+MSVC does not promise to *use* every v3 instruction, only that it will not
+exceed the level; the label describes the minimum requirement.
 
 ## Why not v4 / AVX-512
 
