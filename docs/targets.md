@@ -8,7 +8,7 @@ name carry the requirement.
 ```
 amd64    baseline x86-64 (SSE2)
 amd64v3  AVX2 + FMA + BMI1 + BMI2 + LZCNT + MOVBE
-arm64    reserved slot, nothing built today
+arm64    reserved slot; no arm64 recipe in this repository
 ```
 
 The name is a slot in the artifact name (`<name>-<ver>-<rel>-amd64v3.zip`). If a
@@ -66,8 +66,8 @@ exceed the level; the label describes the minimum requirement.
 - v4 halves the set of machines that can run the binaries while helping very few
   workloads in this repository (shells, TUIs, a language server, a sprite
   editor).
-- MSVC's `/arch:AVX512` support has been historically uneven and `lazygit` /
-  `gopls` gain nothing measurable from wider vectors.
+- MSVC's `/arch:AVX512` support is uneven, and the current workloads gain
+  nothing measurable from wider vectors.
 - Costs are asymmetric: raising the level later is one flag plus one `pkgrel`
   bump; discovering that half your users get `SIGILL` is not recoverable for
   those bytes.

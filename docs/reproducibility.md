@@ -2,7 +2,7 @@
 
 ## Levels
 
-The vocabulary used here is the one from the notes this repository grew out of:
+Levels are defined as follows:
 
 | Level | Meaning |
 |---|---|
@@ -120,8 +120,7 @@ which destroys both A/B comparison and any claim about a released archive.
 own `rust-toolchain.toml` or `.cargo/config.toml`, the build drops the file and
 uses the repository's compiler instead. The artifact is ours, not upstream's, so
 inheriting their compiler choice buys nothing and only fragments the toolchain
-across packages: `nushell` pins an older rustc, we build it with the repository's
-pinned stable rustc, the way a distribution does.
+across packages; build with the repository's pinned compiler instead.
 
 **zig is downloaded by us, not by the runner.** `toolchain.zig: "0.17.1"` is
 resolved through a table inside `pkgctl` that carries the archive URL and its
