@@ -130,8 +130,10 @@ def write_json(path, data):
     path.write_text(stable_json(data), encoding="utf-8", newline="\n")
 
 
-def run(cmd, cwd=None, env=None, capture=False):
+def run(cmd, cwd=None, env=None, capture=False, secret=None):
     printable = " ".join(str(part) for part in cmd)
+    if secret:
+        printable = printable.replace(secret, "***")
     log(printable)
     result = subprocess.run(
         cmd,
@@ -263,6 +265,9 @@ def validate_recipe(recipe):
                 accept = source.get("accept")
                 check(accept is None or (isinstance(accept, str) and bool(accept)),
                       f"{prefix}.accept must be a non-empty string when set")
+                auth = source.get("auth")
+                check(auth is None or auth == "github",
+                      f"{prefix}.auth must be 'github' when set")
 
     build = data["build"]
     check(isinstance(build, dict), "build must be a mapping")
@@ -369,7 +374,7 @@ def cmd_plan(args):
     sources = []
     for source in recipe["sources"]:
         entry = {key: source.get(key)
-             for key in ("type", "url", "accept", "tag", "commit", "dir", "extract", "sha256")}
+             for key in ("type", "url", "accept", "auth", "tag", "commit", "dir", "extract", "sha256")}
         for key in ("url", "tag"):
             if entry.get(key):
                 entry[key] = render(entry[key], variables)
@@ -396,16 +401,19 @@ def cmd_plan(args):
     print(stable_json(plan), end="")
 
 
-def download(url, destination, accept=None):
+def download(url, destination, accept=None, token=None):
     destination.parent.mkdir(parents=True, exist_ok=True)
     # A release asset behind the CDN can answer 504 for a few minutes while a
     # full download of the same URL succeeds, so ride it out for up to three
     # minutes instead of giving up after twenty seconds.
     headers = ["--header", f"Accept: {accept}"] if accept else []
+    if token:
+        # Logged through run(secret=...) so the value never reaches the log.
+        headers += ["--header", f"Authorization: Bearer {token}"]
     run(["curl", "--fail", "--silent", "--show-error", "--location",
          "--retry", "8", "--retry-delay", "5", "--retry-max-time", "180",
          "--retry-all-errors", "--connect-timeout", "30", *headers,
-         "--output", str(destination), url])
+         "--output", str(destination), url], secret=token)
 
 
 def verify_tag(source):
@@ -464,8 +472,16 @@ def fetch_url(source, destination, cache):
     expected = source["sha256"]
     cached = cache / expected
     if not cached.is_file() or sha256_file(cached) != expected:
+        token = None
+        if source.get("auth") == "github":
+            # api.github.com allows 60 unauthenticated requests per hour per
+            # address, and a hosted runner shares its address with every other
+            # job, so a recipe that uses the asset API opts into the job token.
+            token = os.environ.get("GITHUB_TOKEN") or os.environ.get("GH_TOKEN")
+            if not token:
+                raise Fail(f"{url} requires auth: github, but GITHUB_TOKEN is not set")
         log(f"downloading {url}")
-        download(url, cached, source.get("accept"))
+        download(url, cached, source.get("accept"), token)
         actual = sha256_file(cached)
         if actual != expected:
             cached.unlink(missing_ok=True)

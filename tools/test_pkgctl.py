@@ -134,9 +134,11 @@ class PkgctlTestCase(unittest.TestCase):
         build.chmod(0o755)
         return directory
 
-    def pkgctl(self, *args, expect=0):
+    def pkgctl(self, *args, expect=0, extra_env=None):
         env = dict(os.environ, PKGCTL_ROOT=str(self.root))
         env.update(self.git_env)
+        if extra_env:
+            env.update(extra_env)
         result = subprocess.run([sys.executable, str(PKGCTL), *args], cwd=str(self.root),
                                 env=env, text=True, capture_output=True, check=False)
         if expect == 0:
@@ -352,6 +354,54 @@ class PackagingTest(PkgctlTestCase):
                              "--work", str(self.tmp / "work"))
         self.assertIn("Accept: application/octet-stream", result.stdout + result.stderr)
         self.assertTrue((self.tmp / "work" / "a" / "src" / "asset" / "inner.txt").is_file())
+
+    def test_url_source_sends_the_job_token(self):
+        # api.github.com allows 60 unauthenticated requests per hour per address
+        # and a hosted runner shares its address, so a recipe can opt into the
+        # job token. The value must not survive into the log.
+        payload = self.tmp / "asset.zip"
+        with zipfile.ZipFile(payload, "w") as archive:
+            archive.writestr("inner.txt", "payload\n")
+        sources = [
+            "  - type: url",
+            f"    url: file://{payload}",
+            "    auth: github",
+            f"    sha256: {sha256_file(payload)}",
+            "    extract: zip",
+            "    dir: asset",
+        ]
+        self.write_recipe(sources=sources)
+        token = "ghs_test_token_value"
+        result = self.pkgctl("fetch", "--package", "demo", "--id", "a",
+                             "--work", str(self.tmp / "work"),
+                             extra_env={"GITHUB_TOKEN": token})
+        output = result.stdout + result.stderr
+        self.assertIn("Authorization: Bearer ***", output)
+        self.assertNotIn(token, output)
+        self.assertTrue((self.tmp / "work" / "a" / "src" / "asset" / "inner.txt").is_file())
+
+    def test_url_source_without_a_token_fails(self):
+        payload = self.tmp / "asset.zip"
+        with zipfile.ZipFile(payload, "w") as archive:
+            archive.writestr("inner.txt", "payload\n")
+        sources = [
+            "  - type: url",
+            f"    url: file://{payload}",
+            "    auth: github",
+            f"    sha256: {sha256_file(payload)}",
+            "    extract: zip",
+            "    dir: asset",
+        ]
+        self.write_recipe(sources=sources)
+        env = {key: value for key, value in os.environ.items()
+               if key not in ("GITHUB_TOKEN", "GH_TOKEN")}
+        result = subprocess.run([sys.executable, str(PKGCTL), "fetch", "--package", "demo",
+                                 "--id", "a", "--work", str(self.tmp / "work")],
+                                cwd=str(self.root),
+                                env=dict(env, PKGCTL_ROOT=str(self.root), **self.git_env),
+                                text=True, capture_output=True, check=False)
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("requires auth: github", result.stderr)
 
     def test_packaging_is_byte_identical(self):
         source, commit = self.make_source_repo()

@@ -21,9 +21,15 @@ sources:
   # but that redirect answered 504 from GitHub's own edge on 2026-11-08 while the
   # asset route served the file. The id is opaque only until the sha256 below
   # pins the content, so an upstream re-upload cannot change what we build.
+  #
+  # The asset route is an API call, and api.github.com allows 60 unauthenticated
+  # requests per hour per address, which a hosted runner shares with every other
+  # job; 9 retries in a row answered 403 on 2026-11-15. auth: github sends the job
+  # token, and the token is never written to the log or the manifest.
   - type: url
     url: https://api.github.com/repos/aseprite/skia/releases/assets/173170506
     accept: application/octet-stream
+    auth: github
     sha256: 5a371a4b2819bb4eb96e36cd75fa623585e1d5477e253a970302b6f2471b6934
     extract: zip
     dir: skia

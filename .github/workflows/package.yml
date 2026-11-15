@@ -139,6 +139,11 @@ jobs:
           if ($LASTEXITCODE -ne 0) { throw "zig setup failed" }
           Add-Content -Path $env:GITHUB_PATH -Value $zig
       - name: Resolve sources
+        env:
+          # url sources with auth: github read this; the asset API answers 403
+          # once the unauthenticated per-address quota is spent, which a shared
+          # runner address manages easily.
+          GITHUB_TOKEN: ${{ github.token }}
         run: python tools/pkgctl.py fetch --id $env:BUILD_ID --work "$env:RUNNER_TEMP/work"
       - name: Build
         run: python tools/pkgctl.py build --id $env:BUILD_ID --work "$env:RUNNER_TEMP/work"
