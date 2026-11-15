@@ -1,0 +1,26 @@
+diff --git a/CMakeLists.txt b/CMakeLists.txt
+index 7a65db6b..3104ec48 100755
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -249,6 +249,12 @@ set(MEGA_MODPLUG modplug-static)
+ 
+ # LuaJIT
+ if(MSVC)
++	if(MEGA_LUAJIT_PREBUILT_DIR)
++		add_custom_target(luajit)
++		set(MEGA_LUAJIT_LIB "${MEGA_LUAJIT_PREBUILT_DIR}/lua51.lib")
++		set(MEGA_LUAJIT_DLL "${MEGA_LUAJIT_PREBUILT_DIR}/lua51.dll")
++		set(MEGA_LUAJIT_INCLUDE "${MEGA_LUAJIT_PREBUILT_DIR}/include")
++	else()
+ 	message(STATUS "-----------------------------------------------------")
+ 	message(STATUS "Configuring: LuaJIT ${MEGA_LUAJIT_VER}")
+ 	message(STATUS "-----------------------------------------------------")
+@@ -284,6 +290,8 @@ if(MSVC)
+ 	set(MEGA_LUAJIT_DLL ${CMAKE_BINARY_DIR}/bin/lua51.dll)
+ 	set(MEGA_LUAJIT_INCLUDE ${MEGA_LUAJIT_SOURCE_DIR}/src)
+ 
++	endif()
++
+ endif()
+ 
+ set(MEGA_3P

@@ -33,10 +33,12 @@ build:
     - "MSVC /arch:AVX2 (x86-64-v3) for all CMake-built modules; upstream Windows builds use the baseline SSE2 target"
     - "dynamic CRT (/MD) and no CRT files in the archive: target machines need the matching VC++ Redistributable"
     - "no /fp:fast; the MSVC default /fp:precise is kept for Lua and Box2D floating-point behavior"
-    - "no /GL or /LTCG; CMake interprocedural optimization is left off"
+    - "MSVC /GL and /LTCG are enabled for CMake-built code; LuaJIT is built separately without WPO"
     - "LuaJIT, SDL2, mpg123 and OpenAL Soft stay DLLs; zlib, libogg, libvorbis, libtheora, FreeType and libmodplug are linked into love.dll"
-    - "the megasource 11.5 layout already provides the intended 2+2 split; no dependency source patch is applied"
-    - "LuaJIT is built by its own msvcbuild.bat and remains baseline; the package is amd64v3 because love.dll and the CMake-built DLLs use /arch:AVX2"
+    - "the megasource 11.5 layout already provides the intended 2+2 split; the only source change is a small prebuilt-LuaJIT hook"
+    - "LuaJIT is built separately by msvcbuild.bat with the same base flags (/MD /O2 /Ob2 /DNDEBUG /arch:AVX2); /GL and /LTCG are not applied to LuaJIT"
+    - "LuaJIT is consumed as prebuilt lua51.lib/lua51.dll/include via MEGA_LUAJIT_PREBUILT_DIR; its sources are not integrated into love.dll"
+    - "the package is amd64v3 because love.dll and the CMake-built DLLs use /arch:AVX2; LuaJIT is compiled with /arch:AVX2 too"
 
 stage:
   - from: ${out}/bin
@@ -57,7 +59,9 @@ distribution: allowed
 notes: >-
   LÖVE 11.5, built from the 11.5 tags of love and megasource. LuaJIT, SDL2,
   mpg123 and OpenAL Soft are shipped as DLLs; zlib, libogg, libvorbis,
-  libtheora, FreeType and libmodplug are linked into love.dll. The Microsoft
-  VC++ runtime is not bundled; install the matching VC++ Redistributable.
-  license.txt is included; mpg123 (LGPL-2.1) and OpenAL Soft (LGPL-2.0+)
-  remain separate DLLs.
+  libtheora, FreeType and libmodplug are linked into love.dll. LuaJIT is
+  built separately with msvcbuild.bat using the same base flags, then fed to
+  the build as a prebuilt lua51.lib/lua51.dll. The Microsoft VC++ runtime is
+  not bundled; install the matching VC++ Redistributable. license.txt is
+  included; mpg123 (LGPL-2.1) and OpenAL Soft (LGPL-2.0+) remain separate
+  DLLs.
