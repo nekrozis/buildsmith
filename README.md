@@ -79,10 +79,3 @@ and the index refresh job, and the `release` environment only on the publish job
 - `distribution: private-only` packages are excluded from the index and cannot
   be published (`aseprite` is one, see `docs/publishing.md`).
 
-## Status
-
-Working: recipes, deterministic packaging, manifests, A/B comparison,
-attestations, draft releases, index generation.
-
-Not implemented yet: signed index (minisign), mirror array in the index,
-CNB mirror job, automatic upstream-release triggers, SBOM.

@@ -2,7 +2,7 @@
 
 ## Levels
 
-The vocabulary used here is the one from the notes this repository grew out of:
+Levels are defined as follows:
 
 | Level | Meaning |
 |---|---|
@@ -22,18 +22,11 @@ reproducibility:
   verified_on: [windows-2025]
 ```
 
-## Current claims
+## Recording claims
 
-| Package | Level | Evidence |
-|---|---|---|
-| gopls | L3 | Go toolchain, `-trimpath -buildvcs=false`, no cgo; measured identical on windows-2022 / windows-2025 / local |
-| lazygit | L3 | same shape as gopls, version metadata injected from `SOURCE_DATE_EPOCH` |
-| nushell | L2 | Rust + MSVC; `wshim` showed UCRT import-set drift between runner images |
-| ripgrep | L2 | Rust + MSVC, PCRE2 statically linked; A/B identical on windows-2025, cross-image not measured |
-| fd-find | L2 | Rust + MSVC; A/B identical on windows-2025, cross-image not measured |
-| aseprite | L2 | MSVC + CMake + a prebuilt Skia binary |
-| gdu | L2 | Go toolchain, PGO from the committed `default.pgo`; A/B identical locally, cross-image not measured |
-| love | L0 | MSVC 18 + CMake; LuaJIT built separately; A/B still differs in LuaJIT `lua51.dll` instruction selection |
+The recipe is the source of truth for a package's level, A/B flag and
+verification image. Record the claim there and let the generated manifest carry
+it; do not maintain a central list of package claims in this document.
 
 `cross_env: true` is only written after an actual cross-image comparison. Until
 then the honest value is `false`, and the manifest says so.
@@ -74,37 +67,28 @@ is not what this does.
 - No timestamps written by us; version strings that embed a date are derived
   from `SOURCE_DATE_EPOCH`, not from `date`.
 
-### MSVC deterministic parameters (LÖVE 11.5)
+### MSVC determinism
 
-The LÖVE 11.5 build tried the following to make MSVC output reproducible:
+For a Windows MSVC recipe that needs byte-identical output:
 
-- `/experimental:deterministic` and `/Brepro` on the compiler, static librarian
-  and linker;
-- `/pathmap:<PKG_SRC_DIR>=/_/src` and `/pathmap:<PKG_WORK_DIR>=/_/work`, so
-  `__FILE__` and debug paths do not contain `work/a` versus `work/b`;
-- `/PDBALTPATH:%_PDB%` on executable and DLL links;
-- for LuaJIT, a separate `msvcbuild.bat` build receives
-  `/experimental:deterministic` and the same path maps through `CL`, and its
-  copied `LJLINK` gets `/INCREMENTAL:NO /OPT:REF,ICF /Brepro` because the direct
-  `link.exe` call does not consume `_LINK_`.
-
-`/experimental:deterministic` implies `/Brepro`, but it is undocumented. PDBs
-are not deterministic; no PDBs are shipped.
-
-This was not sufficient for LÖVE: two LuaJIT runs still produced `lua51.dll`
-variants differing in one inlined `match_class()` copy, at
-`match_class_map[(cl&0x1f)]`:
-
-```asm
-mov eax, ecx   ; 2 bytes
-mov rax, rcx   ; 3 bytes
-```
-
-The un-inlined `match_class()` copy was identical in both runs. The one-byte
-difference shifts subsequent branch displacements and changes `.pdata`, debug
-GUID and the PE timestamp. This is MSVC backend instruction-selection
-non-determinism, not a path or link-parameter difference. `love` is therefore
-`L0` with A/B disabled until this is resolved.
+- Pass `/Brepro` to the compiler, the static librarian and the linker. Passing
+  it only to the linker does not normalise object-file timestamps.
+- `/Brepro` implies `d1nodatetime`: `__DATE__`, `__TIME__` and
+  `__TIMESTAMP__` are fixed. Do not use those macros as version metadata.
+- Add `/pathmap:<root>=<stable>` for every build root that can appear in
+  `__FILE__` or debug data.
+- Add `/PDBALTPATH:%_PDB%` to links when a PDB path would otherwise be embedded.
+  PDBs are not guaranteed to be deterministic and are not shipped.
+- `/experimental:deterministic` implies `/Brepro` and adds warnings for
+  non-deterministic macro use. It is undocumented; treat it as a diagnostic,
+  not as a stronger determinism mode.
+- **Without `/GL`/`/LTCG`, `/experimental:deterministic` is not required.**
+  Use `/Brepro` on the compiler, static librarian and linker; add path mapping
+  and `/PDBALTPATH` only when paths need normalising. Reserve the experimental
+  flag for a one-off diagnostic investigation, not as a default recipe setting.
+- `/GL`/`/LTCG` adds link-time code generation; deterministic flags do not
+  guarantee identical instruction selection between runs. Verify with an A/B
+  run and record L0/L1 rather than claiming L2/L3 from flags alone.
 
 ## Manifest fields
 
@@ -136,8 +120,7 @@ which destroys both A/B comparison and any claim about a released archive.
 own `rust-toolchain.toml` or `.cargo/config.toml`, the build drops the file and
 uses the repository's compiler instead. The artifact is ours, not upstream's, so
 inheriting their compiler choice buys nothing and only fragments the toolchain
-across packages: `nushell` pins an older rustc, we build it with the repository's
-pinned stable rustc, the way a distribution does.
+across packages; build with the repository's pinned compiler instead.
 
 **zig is downloaded by us, not by the runner.** `toolchain.zig: "0.17.1"` is
 resolved through a table inside `pkgctl` that carries the archive URL and its
@@ -166,27 +149,23 @@ still reviewed as a normal batch of releases.
 - **MSVC is bounded, not pinned.** `toolchain.msvc: "18"` is a range, not a
   version: `.github/scripts/setup-msvc.ps1` passes it to vswhere as `[18.0,19.0)`,
   so the build stays on Visual Studio 2026 and fails rather than move to a newer
-  release, while the toolset patch (14.51 today) floats with the image. Short of
-  shipping a VS installer manifest, that is the closest thing available. The
-  manifest records the image version, and a cross-image rebuild is expected to
-  differ (`L2`, not a bug).
-- **The Windows image label moves under the recipes.** `windows-2025` used to be
-  the VS 2022 image and now resolves to `windows-2025-vs2026`, whose Visual
-  Studio 2026 is the only install there; the only VS 2022 image left is
-  `windows-2022`, on Server 2022. A recipe names the label, so the Visual Studio
-  release can change without a commit here: `toolchain.runner_image` records
-  what actually ran.
+  release, while the toolset patch floats with the image. Short of shipping a
+  VS installer manifest, that is the closest thing available. The manifest
+  records the image version, and a cross-image rebuild is expected to differ
+  (`L2`, not a bug).
+- **The Windows image behind a label can move.** `windows-2025` may resolve to a
+  different image over time. Record `toolchain.runner_image`; if a build must be
+  bit-identical to an older one, pin and verify against that image.
 - **MSVC toolset updates inside an image.** `windows-2025` images are refreshed
   monthly. If a build must be bit-identical to a previous one, record
   `toolchain.runner_image` and verify against a pinned image label instead.
-- **Skia is a prebuilt binary** from `aseprite/skia`. It is pinned by sha256, so
-  it cannot change under us, but its own reproducibility is out of our hands.
+- **A prebuilt dependency is only as reproducible as its upstream.** Pin it by
+  sha256 and record the source; `aseprite/skia` is an example.
 - **zig's target libc is shipped inside the compiler.** `x86_64-windows-gnu`
   links against zig's own copy of mingw-w64 and the UCRT headers, so the result
   does not depend on any sysroot installed on the runner. The zig archive itself
   is pinned by sha256, so a rebuild in a different directory or on a different
   image has no moving part left except the host CPU.
 - **Signing.** Authenticode and hashing are mutually exclusive: signing rewrites
-  the file. If packages are ever code-signed, sign `SHA256SUMS` or publish a
-  separate signed copy with its own digest. Nothing in this repository signs
-  binaries today.
+  the file. If packages are code-signed, sign `SHA256SUMS` or publish a separate
+  signed copy with its own digest, and record the new digest.
