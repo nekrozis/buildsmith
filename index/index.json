@@ -1,5 +1,339 @@
 {
-  "packages": {},
+  "packages": {
+    "fd-find": {
+      "conflicts": [],
+      "depends": [],
+      "distribution": "allowed",
+      "homepage": "https://github.com/sharkdp/fd",
+      "latest": "10.5.2-1",
+      "license": "MIT OR Apache-2.0",
+      "notes": "Package name follows Debian and Fedora (fd-find); the executable keeps the upstream name fd.exe. Built from source with the repository's pinned Rust toolchain and static CRT.",
+      "provides": [],
+      "releases": [
+        {
+          "arch": "amd64v3",
+          "full": "10.5.2-1",
+          "manifest_sha256": "339b1b4ba31f5bb1b2b692be670ff5c4773ce7b8e79a1caf0248d6dcdcf832ba",
+          "manifest_url": "https://github.com/nekrozis/buildsmith/releases/download/fd-find/v10.5.2-1/fd-find-10.5.2-1-amd64v3.manifest.json",
+          "pkgrel": 1,
+          "pkgver": "10.5.2",
+          "provenance": null,
+          "reproducibility": {
+            "ab": "same-image",
+            "ab_sha256": [
+              "157d054fdb557da10b49f28b66189288f362d3dbe61c905d48c1ab3b1e3f8c9c",
+              "157d054fdb557da10b49f28b66189288f362d3dbe61c905d48c1ab3b1e3f8c9c"
+            ],
+            "ab_verified": true,
+            "cross_env": false,
+            "level": "L2",
+            "verified_on": [
+              "windows-2025"
+            ]
+          },
+          "sha256": "157d054fdb557da10b49f28b66189288f362d3dbe61c905d48c1ab3b1e3f8c9c",
+          "size": 1577344,
+          "source_date_epoch": 1794034487,
+          "tag": "fd-find/v10.5.2-1",
+          "toolchain": {
+            "go": null,
+            "msvc": null,
+            "runner": "windows-2025",
+            "runner_image": "20261103.298.1",
+            "rust": "1.100.0",
+            "zig": null
+          },
+          "url": "https://github.com/nekrozis/buildsmith/releases/download/fd-find/v10.5.2-1/fd-find-10.5.2-1-amd64v3.zip"
+        }
+      ],
+      "summary": "Simple, fast and user-friendly alternative to find"
+    },
+    "gdu": {
+      "conflicts": [],
+      "depends": [],
+      "distribution": "allowed",
+      "homepage": "https://github.com/dundee/gdu",
+      "latest": "5.39.0-1",
+      "license": "MIT",
+      "notes": "Built with PGO from the profile committed in the source tree, with the web UI embedded. Version metadata is fixed at build time, so --version is byte-stable for a given recipe.",
+      "provides": [],
+      "releases": [
+        {
+          "arch": "amd64v3",
+          "full": "5.39.0-1",
+          "manifest_sha256": "8c0f56dbb6f087a319188a4728bef152104164f56bdc13253b96ecf6b13d6310",
+          "manifest_url": "https://github.com/nekrozis/buildsmith/releases/download/gdu/v5.39.0-1/gdu-5.39.0-1-amd64v3.manifest.json",
+          "pkgrel": 1,
+          "pkgver": "5.39.0",
+          "provenance": null,
+          "reproducibility": {
+            "ab": "same-image",
+            "ab_sha256": [
+              "702778350ea23f3f15402ef3bc433511898996362bbecd8f171ec9f0a3361e81",
+              "702778350ea23f3f15402ef3bc433511898996362bbecd8f171ec9f0a3361e81"
+            ],
+            "ab_verified": true,
+            "cross_env": false,
+            "level": "L2",
+            "verified_on": [
+              "windows-2025"
+            ]
+          },
+          "sha256": "702778350ea23f3f15402ef3bc433511898996362bbecd8f171ec9f0a3361e81",
+          "size": 9105992,
+          "source_date_epoch": 1794005752,
+          "tag": "gdu/v5.39.0-1",
+          "toolchain": {
+            "go": "1.27.4",
+            "msvc": null,
+            "runner": "windows-2025",
+            "runner_image": "20261103.298.1",
+            "rust": null,
+            "zig": null
+          },
+          "url": "https://github.com/nekrozis/buildsmith/releases/download/gdu/v5.39.0-1/gdu-5.39.0-1-amd64v3.zip"
+        }
+      ],
+      "summary": "Pretty fast disk usage analyzer written in Go"
+    },
+    "gopls": {
+      "conflicts": [],
+      "depends": [],
+      "distribution": "allowed",
+      "homepage": "https://go.dev/gopls",
+      "latest": "0.24.0-1",
+      "license": "BSD-3-Clause",
+      "notes": null,
+      "provides": [],
+      "releases": [
+        {
+          "arch": "amd64v3",
+          "full": "0.24.0-1",
+          "manifest_sha256": "b824a93c223d7a9876cedceec3aa31971f8723c749d4fc45048a5ead6a5e794b",
+          "manifest_url": "https://github.com/nekrozis/buildsmith/releases/download/gopls/v0.24.0-1/gopls-0.24.0-1-amd64v3.manifest.json",
+          "pkgrel": 1,
+          "pkgver": "0.24.0",
+          "provenance": null,
+          "reproducibility": {
+            "ab": "same-image",
+            "ab_sha256": [
+              "12dd817b6dd8f835240658c3a8a377b0983350c929f36a314cacc54fadf84bc4",
+              "12dd817b6dd8f835240658c3a8a377b0983350c929f36a314cacc54fadf84bc4"
+            ],
+            "ab_verified": true,
+            "cross_env": true,
+            "level": "L3",
+            "verified_on": [
+              "windows-2025"
+            ]
+          },
+          "sha256": "12dd817b6dd8f835240658c3a8a377b0983350c929f36a314cacc54fadf84bc4",
+          "size": 22679478,
+          "source_date_epoch": 1791999730,
+          "tag": "gopls/v0.24.0-1",
+          "toolchain": {
+            "go": "1.27.4",
+            "msvc": null,
+            "runner": "windows-2025",
+            "runner_image": "20261103.298.1",
+            "rust": null,
+            "zig": null
+          },
+          "url": "https://github.com/nekrozis/buildsmith/releases/download/gopls/v0.24.0-1/gopls-0.24.0-1-amd64v3.zip"
+        }
+      ],
+      "summary": "Go language server"
+    },
+    "lazygit": {
+      "conflicts": [],
+      "depends": [],
+      "distribution": "allowed",
+      "homepage": "https://github.com/jesseduffield/lazygit",
+      "latest": "0.66.3-1",
+      "license": "MIT",
+      "notes": null,
+      "provides": [],
+      "releases": [
+        {
+          "arch": "amd64v3",
+          "full": "0.66.3-1",
+          "manifest_sha256": "917773431129066cd8a226a77d238b9ea52dbe7724bac1f4fb7db7af47c6bea5",
+          "manifest_url": "https://github.com/nekrozis/buildsmith/releases/download/lazygit/v0.66.3-1/lazygit-0.66.3-1-amd64v3.manifest.json",
+          "pkgrel": 1,
+          "pkgver": "0.66.3",
+          "provenance": null,
+          "reproducibility": {
+            "ab": "same-image",
+            "ab_sha256": [
+              "00ca4ce5c4f98e6b4fdab53e0beda9b3a2e73946188e05221c46033539d67f7d",
+              "00ca4ce5c4f98e6b4fdab53e0beda9b3a2e73946188e05221c46033539d67f7d"
+            ],
+            "ab_verified": true,
+            "cross_env": true,
+            "level": "L3",
+            "verified_on": [
+              "windows-2025"
+            ]
+          },
+          "sha256": "00ca4ce5c4f98e6b4fdab53e0beda9b3a2e73946188e05221c46033539d67f7d",
+          "size": 7588981,
+          "source_date_epoch": 1794093371,
+          "tag": "lazygit/v0.66.3-1",
+          "toolchain": {
+            "go": "1.27.4",
+            "msvc": null,
+            "runner": "windows-2025",
+            "runner_image": "20261103.298.1",
+            "rust": null,
+            "zig": null
+          },
+          "url": "https://github.com/nekrozis/buildsmith/releases/download/lazygit/v0.66.3-1/lazygit-0.66.3-1-amd64v3.zip"
+        }
+      ],
+      "summary": "Simple terminal UI for git commands"
+    },
+    "less": {
+      "conflicts": [],
+      "depends": [],
+      "distribution": "allowed",
+      "homepage": "https://www.greenwoodsoftware.com/less/",
+      "latest": "710-1",
+      "license": "GPL-3.0-only",
+      "notes": null,
+      "provides": [],
+      "releases": [
+        {
+          "arch": "amd64v3",
+          "full": "710-1",
+          "manifest_sha256": "d9627d83a36ce8ed33c93cc731cc11d0c10051cea8bad74dc18c9a7917721ead",
+          "manifest_url": "https://github.com/nekrozis/buildsmith/releases/download/less/v710-1/less-710-1-amd64v3.manifest.json",
+          "pkgrel": 1,
+          "pkgver": "710",
+          "provenance": null,
+          "reproducibility": {
+            "ab": "same-image",
+            "ab_sha256": [
+              "4245dd2734da56d26ac6c8b0f5919bcbfb8f359ea506cefa17800a458a91ffd9",
+              "4245dd2734da56d26ac6c8b0f5919bcbfb8f359ea506cefa17800a458a91ffd9"
+            ],
+            "ab_verified": true,
+            "cross_env": false,
+            "level": "L2",
+            "verified_on": [
+              "windows-2025"
+            ]
+          },
+          "sha256": "4245dd2734da56d26ac6c8b0f5919bcbfb8f359ea506cefa17800a458a91ffd9",
+          "size": 157393,
+          "source_date_epoch": 315532800,
+          "tag": "less/v710-1",
+          "toolchain": {
+            "go": null,
+            "msvc": null,
+            "runner": "windows-2025",
+            "runner_image": "20261103.298.1",
+            "rust": null,
+            "zig": "0.17.1"
+          },
+          "url": "https://github.com/nekrozis/buildsmith/releases/download/less/v710-1/less-710-1-amd64v3.zip"
+        }
+      ],
+      "summary": "A terminal pager"
+    },
+    "nushell": {
+      "conflicts": [],
+      "depends": [],
+      "distribution": "allowed",
+      "homepage": "https://www.nushell.sh",
+      "latest": "0.117.0-1",
+      "license": "MIT",
+      "notes": null,
+      "provides": [],
+      "releases": [
+        {
+          "arch": "amd64v3",
+          "full": "0.117.0-1",
+          "manifest_sha256": "33055e275ae260687d45a1af10ea4d582936e5004c2ff931121d8c5055046831",
+          "manifest_url": "https://github.com/nekrozis/buildsmith/releases/download/nushell/v0.117.0-1/nushell-0.117.0-1-amd64v3.manifest.json",
+          "pkgrel": 1,
+          "pkgver": "0.117.0",
+          "provenance": null,
+          "reproducibility": {
+            "ab": "none",
+            "ab_sha256": [],
+            "ab_verified": false,
+            "cross_env": false,
+            "level": "L2",
+            "verified_on": [
+              "windows-2025"
+            ]
+          },
+          "sha256": "2d57efd54075bff529dba8a1da24d5792ef1efcdfebeea34cfb355c0831472ac",
+          "size": 26678759,
+          "source_date_epoch": 1794256610,
+          "tag": "nushell/v0.117.0-1",
+          "toolchain": {
+            "go": null,
+            "msvc": null,
+            "runner": "windows-2025",
+            "runner_image": "20261103.298.1",
+            "rust": "1.100.0",
+            "zig": null
+          },
+          "url": "https://github.com/nekrozis/buildsmith/releases/download/nushell/v0.117.0-1/nushell-0.117.0-1-amd64v3.zip"
+        }
+      ],
+      "summary": "A new type of shell"
+    },
+    "ripgrep": {
+      "conflicts": [],
+      "depends": [],
+      "distribution": "allowed",
+      "homepage": "https://github.com/BurntSushi/ripgrep",
+      "latest": "15.2.0-1",
+      "license": "Unlicense OR MIT",
+      "notes": "Built with PCRE2 support, so -P/--pcre2 and --auto-hybrid-regex work. PCRE2 is linked statically, like the rest of the C runtime.",
+      "provides": [],
+      "releases": [
+        {
+          "arch": "amd64v3",
+          "full": "15.2.0-1",
+          "manifest_sha256": "e8f77e3139480a82ce6324304c2580a54d485d3e5d240e06366786c8e780dab9",
+          "manifest_url": "https://github.com/nekrozis/buildsmith/releases/download/ripgrep/v15.2.0-1/ripgrep-15.2.0-1-amd64v3.manifest.json",
+          "pkgrel": 1,
+          "pkgver": "15.2.0",
+          "provenance": null,
+          "reproducibility": {
+            "ab": "same-image",
+            "ab_sha256": [
+              "43d0111cb72d197e34b1f288b8a9139b7c55faaac726fb98ba20317dc841a8ac",
+              "43d0111cb72d197e34b1f288b8a9139b7c55faaac726fb98ba20317dc841a8ac"
+            ],
+            "ab_verified": true,
+            "cross_env": false,
+            "level": "L2",
+            "verified_on": [
+              "windows-2025"
+            ]
+          },
+          "sha256": "43d0111cb72d197e34b1f288b8a9139b7c55faaac726fb98ba20317dc841a8ac",
+          "size": 1961268,
+          "source_date_epoch": 1784131211,
+          "tag": "ripgrep/v15.2.0-1",
+          "toolchain": {
+            "go": null,
+            "msvc": "18",
+            "runner": "windows-2025",
+            "runner_image": "20261103.298.1",
+            "rust": "1.100.0",
+            "zig": null
+          },
+          "url": "https://github.com/nekrozis/buildsmith/releases/download/ripgrep/v15.2.0-1/ripgrep-15.2.0-1-amd64v3.zip"
+        }
+      ],
+      "summary": "Line-oriented search tool that recursively searches for a regex pattern"
+    }
+  },
   "repository": {
     "base_url": null,
     "name": "buildsmith",
