@@ -130,10 +130,13 @@ still reviewed as a normal batch of releases.
 
 ## Known weak points
 
-- **MSVC is not exactly pinnable.** `toolchain.msvc: "17"` plus a pinned runner
-  image is the closest thing available without shipping a VS installer manifest.
-  The manifest records the image version, and a cross-image rebuild is expected
-  to differ (`L2`, not a bug).
+- **MSVC is bounded, not pinned.** `toolchain.msvc: "17"` is a range, not a
+  version: `.github/scripts/setup-msvc.ps1` passes it to vswhere as `[17.0,18.0)`,
+  so the build stays on Visual Studio 2022 and fails rather than move to a newer
+  release, while the toolset patch (14.44 today) floats with the image. Short of
+  shipping a VS installer manifest, that is the closest thing available. The
+  manifest records the image version, and a cross-image rebuild is expected to
+  differ (`L2`, not a bug).
 - **MSVC toolset updates inside an image.** `windows-2025` images are refreshed
   monthly. If a build must be bit-identical to a previous one, record
   `toolchain.runner_image` and verify against a pinned image label instead.
