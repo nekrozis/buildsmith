@@ -22,18 +22,11 @@ reproducibility:
   verified_on: [windows-2025]
 ```
 
-## Current claims
+## Recording claims
 
-| Package | Level | Evidence |
-|---|---|---|
-| gopls | L3 | Go toolchain, `-trimpath -buildvcs=false`, no cgo; measured identical on windows-2022 / windows-2025 / local |
-| lazygit | L3 | same shape as gopls, version metadata injected from `SOURCE_DATE_EPOCH` |
-| nushell | L2 | Rust + MSVC; `wshim` showed UCRT import-set drift between runner images |
-| ripgrep | L2 | Rust + MSVC, PCRE2 statically linked; A/B identical on windows-2025, cross-image not measured |
-| fd-find | L2 | Rust + MSVC; A/B identical on windows-2025, cross-image not measured |
-| aseprite | L2 | MSVC + CMake + a prebuilt Skia binary |
-| gdu | L2 | Go toolchain, PGO from the committed `default.pgo`; A/B identical locally, cross-image not measured |
-| love | L0 | MSVC 18 + CMake; LuaJIT built separately; A/B still differs in LuaJIT `lua51.dll` instruction selection |
+The recipe is the source of truth for a package's level, A/B flag and
+verification image. Record the claim there and let the generated manifest carry
+it; do not maintain a central list of package claims in this document.
 
 `cross_env: true` is only written after an actual cross-image comparison. Until
 then the honest value is `false`, and the manifest says so.
@@ -157,27 +150,23 @@ still reviewed as a normal batch of releases.
 - **MSVC is bounded, not pinned.** `toolchain.msvc: "18"` is a range, not a
   version: `.github/scripts/setup-msvc.ps1` passes it to vswhere as `[18.0,19.0)`,
   so the build stays on Visual Studio 2026 and fails rather than move to a newer
-  release, while the toolset patch (14.51 today) floats with the image. Short of
-  shipping a VS installer manifest, that is the closest thing available. The
-  manifest records the image version, and a cross-image rebuild is expected to
-  differ (`L2`, not a bug).
-- **The Windows image label moves under the recipes.** `windows-2025` used to be
-  the VS 2022 image and now resolves to `windows-2025-vs2026`, whose Visual
-  Studio 2026 is the only install there; the only VS 2022 image left is
-  `windows-2022`, on Server 2022. A recipe names the label, so the Visual Studio
-  release can change without a commit here: `toolchain.runner_image` records
-  what actually ran.
+  release, while the toolset patch floats with the image. Short of shipping a
+  VS installer manifest, that is the closest thing available. The manifest
+  records the image version, and a cross-image rebuild is expected to differ
+  (`L2`, not a bug).
+- **The Windows image behind a label can move.** `windows-2025` may resolve to a
+  different image over time. Record `toolchain.runner_image`; if a build must be
+  bit-identical to an older one, pin and verify against that image.
 - **MSVC toolset updates inside an image.** `windows-2025` images are refreshed
   monthly. If a build must be bit-identical to a previous one, record
   `toolchain.runner_image` and verify against a pinned image label instead.
-- **Skia is a prebuilt binary** from `aseprite/skia`. It is pinned by sha256, so
-  it cannot change under us, but its own reproducibility is out of our hands.
+- **A prebuilt dependency is only as reproducible as its upstream.** Pin it by
+  sha256 and record the source; `aseprite/skia` is an example.
 - **zig's target libc is shipped inside the compiler.** `x86_64-windows-gnu`
   links against zig's own copy of mingw-w64 and the UCRT headers, so the result
   does not depend on any sysroot installed on the runner. The zig archive itself
   is pinned by sha256, so a rebuild in a different directory or on a different
   image has no moving part left except the host CPU.
 - **Signing.** Authenticode and hashing are mutually exclusive: signing rewrites
-  the file. If packages are ever code-signed, sign `SHA256SUMS` or publish a
-  separate signed copy with its own digest. Nothing in this repository signs
-  binaries today.
+  the file. If packages are code-signed, sign `SHA256SUMS` or publish a separate
+  signed copy with its own digest, and record the new digest.
