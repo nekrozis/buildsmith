@@ -33,6 +33,7 @@ reproducibility:
 | fd-find | L2 | Rust + MSVC; A/B identical on windows-2025, cross-image not measured |
 | aseprite | L2 | MSVC + CMake + a prebuilt Skia binary |
 | gdu | L2 | Go toolchain, PGO from the committed `default.pgo`; A/B identical locally, cross-image not measured |
+| love | L0 | MSVC 18 + CMake; LuaJIT built separately; A/B still differs in LuaJIT `lua51.dll` instruction selection |
 
 `cross_env: true` is only written after an actual cross-image comparison. Until
 then the honest value is `false`, and the manifest says so.
@@ -72,6 +73,38 @@ is not what this does.
   pinned toolchain versions, pinned runner images.
 - No timestamps written by us; version strings that embed a date are derived
   from `SOURCE_DATE_EPOCH`, not from `date`.
+
+### MSVC deterministic parameters (LÖVE 11.5)
+
+The LÖVE 11.5 build tried the following to make MSVC output reproducible:
+
+- `/experimental:deterministic` and `/Brepro` on the compiler, static librarian
+  and linker;
+- `/pathmap:<PKG_SRC_DIR>=/_/src` and `/pathmap:<PKG_WORK_DIR>=/_/work`, so
+  `__FILE__` and debug paths do not contain `work/a` versus `work/b`;
+- `/PDBALTPATH:%_PDB%` on executable and DLL links;
+- for LuaJIT, a separate `msvcbuild.bat` build receives
+  `/experimental:deterministic` and the same path maps through `CL`, and its
+  copied `LJLINK` gets `/INCREMENTAL:NO /OPT:REF,ICF /Brepro` because the direct
+  `link.exe` call does not consume `_LINK_`.
+
+`/experimental:deterministic` implies `/Brepro`, but it is undocumented. PDBs
+are not deterministic; no PDBs are shipped.
+
+This was not sufficient for LÖVE: two LuaJIT runs still produced `lua51.dll`
+variants differing in one inlined `match_class()` copy, at
+`match_class_map[(cl&0x1f)]`:
+
+```asm
+mov eax, ecx   ; 2 bytes
+mov rax, rcx   ; 3 bytes
+```
+
+The un-inlined `match_class()` copy was identical in both runs. The one-byte
+difference shifts subsequent branch displacements and changes `.pdata`, debug
+GUID and the PE timestamp. This is MSVC backend instruction-selection
+non-determinism, not a path or link-parameter difference. `love` is therefore
+`L0` with A/B disabled until this is resolved.
 
 ## Manifest fields
 
