@@ -34,7 +34,7 @@ build:
     - "dynamic CRT (/MD) and no CRT files in the archive: target machines need the matching VC++ Redistributable"
     - "no /fp:fast; the MSVC default /fp:precise is kept for Lua and Box2D floating-point behavior"
     - "MSVC /GL and /LTCG are enabled for CMake-built code; LuaJIT is built separately without WPO"
-    - "LTCG output is not byte-identical across two runs, so A/B is disabled and the recipe is L0 for now; determinism is a separate experiment"
+    - "experiment: /experimental:deterministic and /Brepro on cl/lib, /pathmap maps PKG_SRC_DIR and PKG_WORK_DIR to /_/src and /_/work, and links use /PDBALTPATH:%_PDB%; A/B is re-enabled"
     - "LuaJIT, SDL2, mpg123 and OpenAL Soft stay DLLs; zlib, libogg, libvorbis, libtheora, FreeType and libmodplug are linked into love.dll"
     - "the megasource 11.5 layout already provides the intended 2+2 split; only small LuaJIT-prebuilt and OpenAL native-tools CMake fixes are patched"
     - "LuaJIT is built separately by msvcbuild.bat with the same base flags (/MD /O2 /Ob2 /DNDEBUG /arch:AVX2); /GL and /LTCG are not applied to LuaJIT"
@@ -51,8 +51,8 @@ smoke:
   - [bin/love.exe, --version]
 
 reproducibility:
-  level: L0
-  ab: false
+  level: L1
+  ab: true
   cross_env: false
   verified_on: []
 

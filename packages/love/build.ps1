@@ -6,6 +6,10 @@ $luajitRoot = Join-Path $env:PKG_WORK_DIR 'luajit'
 $buildRoot = Join-Path $env:PKG_WORK_DIR 'build'
 $outBin = Join-Path $env:PKG_OUT_DIR 'bin'
 
+# Map each leg's source/work root to a stable virtual path so __FILE__ and
+# debug paths do not contain work/a or work/b.
+$pathMap = "/pathmap:$env:PKG_SRC_DIR=/_/src /pathmap:$env:PKG_WORK_DIR=/_/work"
+
 # LuaJIT is built separately with its supplied build system, as upstream
 # recommends. It gets the same base flags as the CMake targets, but not /GL
 # or /LTCG: LuaJIT contains generated assembly and JIT code, and WPO has no
@@ -76,10 +80,11 @@ $configure = @(
   # CMake 4.x rejects <3.5 unless this opt-in is set.
   '-DCMAKE_POLICY_VERSION_MINIMUM=3.5',
   '-DCMAKE_MSVC_RUNTIME_LIBRARY=MultiThreadedDLL',
-  '-DCMAKE_C_FLAGS_RELEASE=/MD /O2 /Ob2 /DNDEBUG /arch:AVX2 /GL',
-  '-DCMAKE_CXX_FLAGS_RELEASE=/MD /O2 /Ob2 /DNDEBUG /arch:AVX2 /GL',
-  '-DCMAKE_EXE_LINKER_FLAGS_RELEASE=/LTCG',
-  '-DCMAKE_SHARED_LINKER_FLAGS_RELEASE=/LTCG',
+  "-DCMAKE_C_FLAGS_RELEASE=/MD /O2 /Ob2 /DNDEBUG /arch:AVX2 /GL /Brepro /experimental:deterministic $pathMap",
+  "-DCMAKE_CXX_FLAGS_RELEASE=/MD /O2 /Ob2 /DNDEBUG /arch:AVX2 /GL /Brepro /experimental:deterministic $pathMap",
+  '-DCMAKE_STATIC_LINKER_FLAGS_RELEASE=/Brepro',
+  '-DCMAKE_EXE_LINKER_FLAGS_RELEASE=/LTCG /PDBALTPATH:%_PDB%',
+  '-DCMAKE_SHARED_LINKER_FLAGS_RELEASE=/LTCG /PDBALTPATH:%_PDB%',
   "-DMEGA_LOVE=$loveRoot",
   "-DMEGA_LUAJIT_PREBUILT_DIR=$luajitRoot",
   '-DLOVE_JIT=ON',
