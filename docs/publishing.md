@@ -8,9 +8,8 @@ reproducibility answers *are these bytes the product of that source*. Both are
 checked locally, so any mirror can be swapped, blocked or disappear without
 affecting correctness.
 
-The signing step is not implemented yet — see "Not implemented" below. Until it
-is, the index is a convenience, not a trust anchor, and clients should treat the
-release notes on GitHub as the authority.
+An unsigned index is a convenience, not a trust anchor. Until index signing is
+implemented, treat the release notes on GitHub as the authority.
 
 ## Releases
 
@@ -69,66 +68,18 @@ content actually changed. `private-only` packages never appear.
 
 ## Mirrors
 
-The intended shape is a `mirrors` array per release:
-
-```json
-"url": "https://github.com/…/gopls-0.24.0-1-amd64v3.zip",
-"mirrors": ["https://cnb.cool/nekrozis/buildsmith-mirror/-/…/gopls-0.24.0-1-amd64v3.zip"]
-```
-
-Clients try `url` then each mirror, and verify `sha256` on whatever they get.
-Swapping a mirror is then a one-line index change with no client release.
-
-**Not implemented yet.** Today the index carries a single `url`. Adding
-`mirrors` is a small change to `cmd_index` plus a mirror upload job; it is
-deliberately deferred until there is a second host to point at.
-
-## CNB (`cnb.cool`) as a mirror
-
-What it can and cannot do, from its own documentation:
-
-| Capability | Status | Consequence |
-|---|---|---|
-| Anonymous raw file over `https://cnb.cool/<group>/<repo>/-/git/raw/<ref>/<path>` | works | index or small assets can be served without auth |
-| Release with attachments | needs the `cnbcool/attachments` plugin | extra step, mechanical |
-| OCI artifact store (ORAS) | works for generic files, **rejects container images, buildx cache and attestations** | CNB can mirror zips, never the attestation |
-| Static site / Pages | not offered | no "website" hosting for the index |
-| Hosted Windows runners | Linux only; Windows requires a group-owned runner | build stays on GitHub |
-| Free quota | 100 GiB storage, 160 core-hours/month | plenty for a byte mirror, not for builds |
-
-So: **build on GitHub, mirror bytes to CNB, keep the index independent.** The
-mirror job must be downstream of the release job — a failed mirror is an alert,
-never a failed release.
-
-Objection worth stating plainly: GitHub Releases is not a real storage
-constraint for this repository (a few hundred MB per year, 2 GiB per asset, no
-meaningful bandwidth cap for public assets). The argument for CNB is **domestic
-download speed and ecosystem visibility**, not capacity. That argument is good,
-which is why CNB is worth adding — but it is not a reason to make GitHub the
-*only* place binaries live, nor to make CNB the only place they live. Keep both,
-differ in role: GitHub is the provenance-carrying source of truth, CNB is speed.
-
-Cross-border transfers from Azure-hosted runners to CNB are the practical
-annoyance: a retry with backoff, and a non-fatal failure, are required. The
-alternative (let CNB pull from GitHub via `api_trigger` to save outbound
-bandwidth) is a later optimisation.
+The release URL is canonical. If a mirror is added, it must serve byte-identical
+assets; clients verify `sha256` on whatever they download. A mirror is never the
+source of truth, and a failed mirror upload must not fail a release.
 
 ## Licensing gates
 
 `distribution: private-only` means: not in the index, not uploaded to any
 mirror, and the publish job refuses to run.
 
-- `aseprite` — the Aseprite EULA allows building from source for personal use
-  but does not permit redistributing compiled binaries. Its recipe exists so a
-  local/CI build is reproducible; it must never be published.
-- Future GPL packages (e.g. sing-box) are publishable, but the corresponding
-  source offer must be reachable from the release notes. A pinned commit plus a
-  reproducible build satisfies this in practice; write it down anyway.
-
-## Not implemented
-
-- minisign signature over `index.json` (the trust anchor).
-- `mirrors` array and the CNB upload job.
-- Automatic rebuilds on upstream releases (deliberately manual for now).
-- SBOM.
-- Client/installer (shims, PATH, uninstall).
+- `aseprite` is the example: the Aseprite EULA allows building from source for
+  personal use but not redistributing compiled binaries, so its recipe is
+  `private-only` and must never be published.
+- GPL packages are publishable, but the corresponding source offer must be
+  reachable from the release notes. A pinned commit plus a reproducible build
+  satisfies this in practice; record it in the notes anyway.
