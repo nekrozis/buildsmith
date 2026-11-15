@@ -19,6 +19,18 @@ $luajitSource = Join-Path $megaRoot 'libs/LuaJIT'
 if (Test-Path $luajitRoot) { Remove-Item -Recurse -Force $luajitRoot }
 Copy-Item -Recurse -Force $luajitSource $luajitRoot
 
+# msvcbuild.bat calls link.exe directly, so the package-level _LINK_ is not
+# picked up. Put the deterministic link flags into the copied script.
+$msvcBuild = Join-Path $luajitRoot 'src/msvcbuild.bat'
+$msvcBuildText = Get-Content -Raw $msvcBuild
+if (-not $msvcBuildText.Contains('@set LJLINK=link /nologo')) {
+  throw "unexpected msvcbuild.bat; LJLINK line not found"
+}
+$msvcBuildText = $msvcBuildText.Replace(
+  '@set LJLINK=link /nologo',
+  '@set LJLINK=link /nologo /INCREMENTAL:NO /OPT:REF,ICF /Brepro')
+Set-Content -Path $msvcBuild -Value $msvcBuildText -NoNewline -Encoding ascii
+
 $savedCl = $env:CL
 $savedLink = $env:_LINK_
 try {
