@@ -34,7 +34,7 @@ Set-Content -Path $msvcBuild -Value $msvcBuildText -NoNewline -Encoding ascii
 $savedCl = $env:CL
 $savedLink = $env:_LINK_
 try {
-  $env:CL = '/O2 /Ob2 /DNDEBUG /arch:AVX2'  # /MD comes from msvcbuild.bat
+  $env:CL = "/O2 /Ob2 /DNDEBUG /arch:AVX2 /experimental:deterministic $pathMap"  # /MD comes from msvcbuild.bat
   Push-Location (Join-Path $luajitRoot 'src')
   try {
     cmd.exe /d /c 'msvcbuild.bat amalg'

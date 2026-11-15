@@ -38,7 +38,7 @@ build:
     - "LuaJIT, SDL2, mpg123 and OpenAL Soft stay DLLs; zlib, libogg, libvorbis, libtheora, FreeType and libmodplug are linked into love.dll"
     - "the megasource 11.5 layout already provides the intended 2+2 split; only small LuaJIT-prebuilt and OpenAL native-tools CMake fixes are patched"
     - "LuaJIT is built separately by msvcbuild.bat with the same base flags (/MD /O2 /Ob2 /DNDEBUG /arch:AVX2); /GL and /LTCG are not applied to LuaJIT"
-    - "LuaJIT link flags are injected into the copied msvcbuild.bat, because its direct link.exe call does not consume _LINK_"
+    - "LuaJIT compile gets /experimental:deterministic and /pathmap; link flags are injected into the copied msvcbuild.bat, because its direct link.exe call does not consume _LINK_"
     - "LuaJIT is consumed as prebuilt lua51.lib/lua51.dll/include via MEGA_LUAJIT_PREBUILT_DIR; its sources are not integrated into love.dll"
     - "the package is amd64v3 because love.dll and the CMake-built DLLs use /arch:AVX2; LuaJIT is compiled with /arch:AVX2 too"
 
