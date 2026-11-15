@@ -1,19 +1,47 @@
 name: love
 
-# Placeholder so the workflow exists on the default branch and can be
-# selected for workflow_dispatch from other branches. Real package work
-# will live on a feature branch.
-
 on:
   workflow_dispatch:
+    inputs:
+      pkgver:
+        description: Upstream version to build (empty keeps the recipe value)
+        type: string
+        required: false
+        default: ""
+      pkgrel:
+        description: Package revision; empty or 0 keeps the recipe value
+        type: string
+        required: false
+        default: ""
+      publish:
+        description: Publish a draft release after the build succeeds
+        type: boolean
+        required: false
+        default: false
 
 permissions:
   contents: read
 
 jobs:
-  placeholder:
-    runs-on: ubuntu-24.04
-    timeout-minutes: 5
-    steps:
-      - name: Placeholder
-        run: echo "love workflow placeholder; no build defined yet"
+  build:
+    uses: ./.github/workflows/package.yml
+    with:
+      package: love
+      pkgver: ${{ inputs.pkgver }}
+      pkgrel: ${{ inputs.pkgrel }}
+    permissions:
+      contents: read
+      id-token: write
+      attestations: write
+
+  publish:
+    if: inputs.publish
+    needs: build
+    uses: ./.github/workflows/publish.yml
+    with:
+      tag: ${{ needs.build.outputs.tag }}
+      publishable: ${{ needs.build.outputs.publishable }}
+    permissions:
+      contents: write
+      id-token: write
+      attestations: write

@@ -1,0 +1,10 @@
+diff --git a/libs/openal-soft/native-tools/CMakeLists.txt b/libs/openal-soft/native-tools/CMakeLists.txt
+index 5e816bba..e2db9067 100644
+--- a/libs/openal-soft/native-tools/CMakeLists.txt
++++ b/libs/openal-soft/native-tools/CMakeLists.txt
+@@ -1,4 +1,4 @@
+-cmake_minimum_required(VERSION 3.0.2)
++cmake_minimum_required(VERSION 3.5)
+ 
+ project(native-tools)
+ 
