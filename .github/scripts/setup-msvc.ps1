@@ -128,7 +128,14 @@ if ($toolsDir) {
 }
 $entries += @($added | Where-Object { $_ -ine $msvcBin })
 if ($entries.Count -gt 0) {
-    Add-Content -LiteralPath $env:GITHUB_PATH -Value $entries
+    # The runner joins the file in reverse before prepending, so the last line
+    # written is the first entry on PATH.
+    $ordered = @($entries)
+    [array]::Reverse($ordered)
+    Add-Content -LiteralPath $env:GITHUB_PATH -Value $ordered
+    foreach ($entry in $ordered) {
+        Write-Host "  PATH += $entry"
+    }
 }
 
 $toolset = ($pairs | Where-Object { $_.Name -ieq 'VCToolsVersion' } | Select-Object -First 1).Value
