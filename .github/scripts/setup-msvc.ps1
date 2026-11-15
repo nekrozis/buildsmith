@@ -4,7 +4,7 @@ Exports the x64 MSVC build environment of the Visual Studio major release that
 a recipe names in build.toolchain.msvc.
 
 .DESCRIPTION
-Only aseprite and ripgrep need a C/C++ compiler, and both ask for MSVC 17.
+Only aseprite and ripgrep need a C/C++ compiler, and both ask for MSVC 18.
 vswhere locates that install and vcvarsall.bat builds the environment; only the
 variables it adds or changes are exported, so the runner image's own settings
 survive and later steps still contribute to PATH.
@@ -16,7 +16,7 @@ inside the release is expected to float with the image, which is why the script
 logs it.
 
 .PARAMETER Version
-Visual Studio major version from the recipe, e.g. 17.
+Visual Studio major version from the recipe, e.g. 18.
 
 .PARAMETER Arch
 Architecture passed to vcvarsall.bat. Every recipe here targets amd64v3, so the
@@ -44,7 +44,7 @@ if (-not (Test-Path -LiteralPath $vswhere)) {
     throw "vswhere.exe not found at $vswhere; the image has no Visual Studio installer"
 }
 
-# [17.0,18.0) keeps the pin: -latest then takes the newest patch of that major.
+# [18.0,19.0) keeps the bound: -latest then takes the newest patch of that major.
 $range = '[{0}.0,{1}.0)' -f ([int] $Version), (([int] $Version) + 1)
 $install = & $vswhere -latest -products * -version $range `
     -requires 'Microsoft.VisualStudio.Component.VC.Tools.x86.x64' -property installationPath
