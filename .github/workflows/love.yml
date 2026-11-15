@@ -1,0 +1,19 @@
+name: love
+
+# Placeholder so the workflow exists on the default branch and can be
+# selected for workflow_dispatch from other branches. Real package work
+# will live on a feature branch.
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  placeholder:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - name: Placeholder
+        run: echo "love workflow placeholder; no build defined yet"
