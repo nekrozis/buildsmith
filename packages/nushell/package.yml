@@ -41,9 +41,9 @@ smoke:
   - [bin/nu.exe, --version]
 
 reproducibility:
-  level: L2
+  level: L0
   ab: false
   cross_env: false
-  verified_on: [windows-2025]
+  verified_on: []
 
 distribution: allowed
