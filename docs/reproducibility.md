@@ -69,6 +69,10 @@ is not what this does.
 
 ### MSVC determinism
 
+The tool-level rules — which flag goes to the compiler, the librarian and the
+linker, and what to pass to the linker when /GL or /LTCG is on — are in
+[msvc-reproducibility.md](msvc-reproducibility.md).
+
 For a Windows MSVC recipe that needs byte-identical output:
 
 - Pass `/Brepro` to the compiler, the static librarian and the linker. Passing
@@ -130,6 +134,9 @@ byte for byte, unpacked under the build's own directory and put on `PATH` for
 the build step. That makes the zig compiler *stronger* than an MSVC pin:
 `windows-2025` refreshes can change the MSVC toolset under an unchanged recipe,
 while a zig package gets the same compiler on any x64 machine, Windows or Linux.
+
+Target selection, the libm difference between the gnu and msvc targets, and the
+flags are in [zig-cc.md](zig-cc.md).
 
 **A toolchain update does not rebuild anything.** Bumping a compiler is a
 `pkgrel` bump, made deliberately:
