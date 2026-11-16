@@ -5,7 +5,7 @@ license: zlib
 
 version:
   pkgver: "11.5"
-  pkgrel: 1
+  pkgrel: 2
 
 arch: [amd64v3]
 
