@@ -10,45 +10,80 @@ $outBin = Join-Path $env:PKG_OUT_DIR 'bin'
 # debug paths do not contain work/a or work/b.
 $pathMap = "/pathmap:$env:PKG_SRC_DIR=/_/src /pathmap:$env:PKG_WORK_DIR=/_/work"
 
-# LuaJIT is built separately with its supplied build system, as upstream
-# recommends. It gets the same base flags as the CMake targets, but not /GL
-# or /LTCG: LuaJIT contains generated assembly and JIT code, and WPO has no
-# upstream precedent there. Whole-program optimization is enabled for the
-# CMake targets only.
-$luajitSource = Join-Path $megaRoot 'libs/LuaJIT'
+# LuaJIT is built separately, outside CMake, from the openresty/luajit2
+# commit pinned in the recipe (the tree Debian stable ships) and injected as
+# a prebuilt library. The compiler is zig cc, not MSVC: this was the last
+# non-reproducible file in the package. MSVC's backend picks different but
+# equivalent instruction encodings for the same input across runs, and no
+# /Brepro, /pathmap or /experimental:deterministic setting changes that.
+$luajitSource = Join-Path $env:PKG_SRC_DIR 'luajit'
 if (Test-Path $luajitRoot) { Remove-Item -Recurse -Force $luajitRoot }
 Copy-Item -Recurse -Force $luajitSource $luajitRoot
 
-# msvcbuild.bat calls link.exe directly, so the package-level _LINK_ is not
-# picked up. Put the deterministic link flags into the copied script.
-$msvcBuild = Join-Path $luajitRoot 'src/msvcbuild.bat'
-$msvcBuildText = Get-Content -Raw $msvcBuild
-if (-not $msvcBuildText.Contains('@set LJLINK=link /nologo')) {
-  throw "unexpected msvcbuild.bat; LJLINK line not found"
-}
-$msvcBuildText = $msvcBuildText.Replace(
-  '@set LJLINK=link /nologo',
-  '@set LJLINK=link /nologo /INCREMENTAL:NO /OPT:REF,ICF /Brepro')
-Set-Content -Path $msvcBuild -Value $msvcBuildText -NoNewline -Encoding ascii
+# The fork ships .relver as an unexpanded $Format:%ct$ placeholder, so the
+# version string has to come from the pinned commit. pkgctl keeps .git, and a
+# shallow clone still answers this for the checked-out commit.
+$luajitRelver = (& git -C $luajitSource show -s --format=%ct HEAD).Trim()
+if ($LASTEXITCODE -ne 0) { throw "cannot read the LuaJIT commit time" }
 
-$savedCl = $env:CL
-$savedLink = $env:_LINK_
+$zig = @('-target', $env:ZIG_TARGET, "-mcpu=$($env:ZIG_CPU)", '-O2', '-DNDEBUG')
+$luajitSrc = Join-Path $luajitRoot 'src'
+Push-Location $luajitSrc
 try {
-  $env:CL = "/O2 /Ob2 /DNDEBUG /arch:AVX2 /experimental:deterministic $pathMap"  # /MD comes from msvcbuild.bat
-  Push-Location (Join-Path $luajitRoot 'src')
-  try {
-    cmd.exe /d /c 'msvcbuild.bat amalg'
-    if ($LASTEXITCODE -ne 0) { throw "LuaJIT build failed with exit code $LASTEXITCODE" }
-  } finally {
-    Pop-Location
+  # Same steps as msvcbuild.bat: host minilua, dynasm, version header,
+  # buildvm, generated VM object, amalgamated library, DLL.
+  & zig cc @zig -o minilua.exe 'host/minilua.c'
+  if ($LASTEXITCODE -ne 0) { throw "LuaJIT minilua failed with exit code $LASTEXITCODE" }
+
+  & ./minilua.exe '..\dynasm\dynasm.lua' -LN -D WIN -D JIT -D FFI -D ENDIAN_LE -D FPU -D P64 -o 'host\buildvm_arch.h' 'vm_x64.dasc'
+  if ($LASTEXITCODE -ne 0) { throw "LuaJIT dynasm failed with exit code $LASTEXITCODE" }
+
+  Set-Content -Path 'luajit_relver.txt' -Value $luajitRelver -NoNewline
+  & ./minilua.exe 'host\genversion.lua'
+  if ($LASTEXITCODE -ne 0) { throw "LuaJIT genversion failed with exit code $LASTEXITCODE" }
+
+  $hostSources = @(Get-ChildItem -Path 'host' -Filter 'buildvm*.c' | ForEach-Object FullName)
+  & zig cc @zig -I . -I '..\dynasm' -o buildvm.exe @hostSources
+  if ($LASTEXITCODE -ne 0) { throw "LuaJIT buildvm failed with exit code $LASTEXITCODE" }
+
+  $libSources = @('lib_base.c', 'lib_math.c', 'lib_bit.c', 'lib_string.c',
+                  'lib_table.c', 'lib_io.c', 'lib_os.c', 'lib_package.c',
+                  'lib_debug.c', 'lib_jit.c', 'lib_ffi.c', 'lib_buffer.c')
+
+  & ./buildvm.exe -m peobj -o 'lj_vm.obj'
+  if ($LASTEXITCODE -ne 0) { throw "LuaJIT peobj failed with exit code $LASTEXITCODE" }
+  foreach ($mode in @(@('bcdef', 'lj_bcdef.h'), @('ffdef', 'lj_ffdef.h'),
+                      @('libdef', 'lj_libdef.h'), @('recdef', 'lj_recdef.h'))) {
+    & ./buildvm.exe -m $mode[0] -o $mode[1] @libSources
+    if ($LASTEXITCODE -ne 0) { throw "LuaJIT $($mode[0]) failed with exit code $LASTEXITCODE" }
+  }
+  & ./buildvm.exe -m vmdef -o 'jit\vmdef.lua' @libSources
+  if ($LASTEXITCODE -ne 0) { throw "LuaJIT vmdef failed with exit code $LASTEXITCODE" }
+  & ./buildvm.exe -m folddef -o 'lj_folddef.h' 'lj_opt_fold.c'
+  if ($LASTEXITCODE -ne 0) { throw "LuaJIT folddef failed with exit code $LASTEXITCODE" }
+
+  & zig cc @zig -DLUA_BUILD_AS_DLL -c 'ljamalg.c' -o 'ljamalg.o'
+  if ($LASTEXITCODE -ne 0) { throw "LuaJIT amalgamation failed with exit code $LASTEXITCODE" }
+  & zig cc @zig -shared -s -o 'lua51.dll' 'ljamalg.o' 'lj_vm.obj'
+  if ($LASTEXITCODE -ne 0) { throw "LuaJIT link failed with exit code $LASTEXITCODE" }
+
+  # The MSVC-built love.dll and the two exes link against an import library.
+  # zig usually emits one; fall back to building it from the DLL exports.
+  if (-not (Test-Path 'lua51.lib')) {
+    $exports = & dumpbin /nologo /exports 'lua51.dll' | ForEach-Object {
+      if ($_ -match '^\s+\d+\s+[0-9A-Fa-f]+\s+[0-9A-Fa-f]+\s+(\S+)$') { $matches[1] }
+    }
+    if (-not $exports) { throw "cannot extract LuaJIT exports from lua51.dll" }
+    Set-Content -Path 'lua51.def' -Value (@('LIBRARY lua51', 'EXPORTS') + $exports) -Encoding ascii
+    & lib /nologo /def:lua51.def /machine:x64 /out:lua51.lib
+    if ($LASTEXITCODE -ne 0) { throw "LuaJIT import library failed with exit code $LASTEXITCODE" }
   }
 } finally {
-  $env:CL = $savedCl
-  $env:_LINK_ = $savedLink
+  Pop-Location
 }
 
 foreach ($name in @('lua51.dll', 'lua51.lib')) {
-  $path = Join-Path (Join-Path $luajitRoot 'src') $name
+  $path = Join-Path $luajitSrc $name
   if (-not (Test-Path $path)) { throw "LuaJIT output $name is missing" }
   Copy-Item -LiteralPath $path -Destination $luajitRoot -Force
 }
@@ -121,5 +156,32 @@ foreach ($name in @('love.exe', 'lovec.exe', 'love.dll', 'SDL2.dll', 'OpenAL32.d
   Copy-Item -LiteralPath (Find-Output $name) -Destination $outBin -Force
 }
 Copy-Item -LiteralPath (Join-Path $luajitRoot 'lua51.dll') -Destination $outBin -Force
+
+# --version returns before a lua_State exists, so the recipe's smoke never
+# calls into lua51.dll. Run a tiny headless game here instead: love.exe (MSVC)
+# creates the state through the zig-built DLL, loads the FFI and quits. Window,
+# graphics and audio modules are off, so this works without a GPU or a device.
+$smokeDir = Join-Path $env:PKG_WORK_DIR 'smoke'
+New-Item -ItemType Directory -Force $smokeDir | Out-Null
+@'
+function love.conf(t)
+  t.modules.audio = false
+  t.modules.graphics = false
+  t.modules.joystick = false
+  t.modules.physics = false
+  t.modules.sound = false
+  t.modules.video = false
+  t.modules.window = false
+end
+'@ | Set-Content -Path (Join-Path $smokeDir 'conf.lua') -Encoding ascii
+@'
+function love.load()
+  local ffi = require("ffi")
+  print("runtime " .. _VERSION .. " / " .. jit.version .. " / ffi " .. tostring(ffi ~= nil))
+  love.event.quit(0)
+end
+'@ | Set-Content -Path (Join-Path $smokeDir 'main.lua') -Encoding ascii
+& (Join-Path $outBin 'love.exe') $smokeDir
+if ($LASTEXITCODE -ne 0) { throw "LuaJIT cross-CRT runtime check failed with exit code $LASTEXITCODE" }
 
 Copy-Item -LiteralPath (Join-Path $loveRoot 'license.txt') -Destination (Join-Path $env:PKG_OUT_DIR 'license.txt') -Force
