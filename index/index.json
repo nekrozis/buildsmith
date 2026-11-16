@@ -240,16 +240,124 @@
       ],
       "summary": "A terminal pager"
     },
+    "love": {
+      "conflicts": [],
+      "depends": [],
+      "distribution": "allowed",
+      "homepage": "https://love2d.org",
+      "latest": "11.5-2",
+      "license": "zlib",
+      "notes": "LÖVE 11.5, built from the 11.5 tags of love and megasource. LuaJIT, SDL2, mpg123 and OpenAL Soft are shipped as DLLs; zlib, libogg, libvorbis, libtheora, FreeType and libmodplug are linked into love.dll. LuaJIT is built separately with msvcbuild.bat using the same base flags, then fed to the build as a prebuilt lua51.lib/lua51.dll. The Microsoft VC++ runtime is not bundled; install the matching VC++ Redistributable. license.txt is included; mpg123 (LGPL-2.1) and OpenAL Soft (LGPL-2.0+) remain separate DLLs. L0: A/B is disabled because the separate LuaJIT build is not byte-reproducible.",
+      "provides": [],
+      "releases": [
+        {
+          "arch": "amd64v3",
+          "full": "11.5-2",
+          "manifest_sha256": "3d7cfb965d681e27b560a267264a7893e532407a15bc91fe28256268986a92bd",
+          "manifest_url": "https://github.com/nekrozis/buildsmith/releases/download/love/v11.5-2/love-11.5-2-amd64v3.manifest.json",
+          "pkgrel": 2,
+          "pkgver": "11.5",
+          "provenance": null,
+          "reproducibility": {
+            "ab": "same-image",
+            "ab_sha256": [
+              "6ec67162c4f6478eb2443fba482b22f6aad3a5de348a97152a05b0a5eb301d05",
+              "6ec67162c4f6478eb2443fba482b22f6aad3a5de348a97152a05b0a5eb301d05"
+            ],
+            "ab_verified": true,
+            "cross_env": false,
+            "level": "L2",
+            "verified_on": [
+              "windows-2025"
+            ]
+          },
+          "sha256": "6ec67162c4f6478eb2443fba482b22f6aad3a5de348a97152a05b0a5eb301d05",
+          "size": 4017675,
+          "source_date_epoch": 1701607476,
+          "tag": "love/v11.5-2",
+          "toolchain": {
+            "go": null,
+            "msvc": "18",
+            "runner": "windows-2025",
+            "runner_image": "20261103.298.1",
+            "rust": null,
+            "zig": "0.17.1"
+          },
+          "url": "https://github.com/nekrozis/buildsmith/releases/download/love/v11.5-2/love-11.5-2-amd64v3.zip"
+        },
+        {
+          "arch": "amd64v3",
+          "full": "11.5-1",
+          "manifest_sha256": "a01ad04f6fe0011f88a86a60ff88f513eff207ae6353b021bfa4c3efdd1b009e",
+          "manifest_url": "https://github.com/nekrozis/buildsmith/releases/download/love/v11.5-1/love-11.5-1-amd64v3.manifest.json",
+          "pkgrel": 1,
+          "pkgver": "11.5",
+          "provenance": null,
+          "reproducibility": {
+            "ab": "none",
+            "ab_sha256": [],
+            "ab_verified": false,
+            "cross_env": false,
+            "level": "L0",
+            "verified_on": []
+          },
+          "sha256": "dc3b4264c0182bfbee8f6ef6246e0ae73ca896e6ac2d8cb4d2c7daa0d86271c0",
+          "size": 3940124,
+          "source_date_epoch": 1701607476,
+          "tag": "love/v11.5-1",
+          "toolchain": {
+            "go": null,
+            "msvc": "18",
+            "runner": "windows-2025",
+            "runner_image": "20261103.298.1",
+            "rust": null,
+            "zig": null
+          },
+          "url": "https://github.com/nekrozis/buildsmith/releases/download/love/v11.5-1/love-11.5-1-amd64v3.zip"
+        }
+      ],
+      "summary": "2D game framework for Lua"
+    },
     "nushell": {
       "conflicts": [],
       "depends": [],
       "distribution": "allowed",
       "homepage": "https://www.nushell.sh",
-      "latest": "0.117.0-1",
+      "latest": "0.117.0-2",
       "license": "MIT",
       "notes": null,
       "provides": [],
       "releases": [
+        {
+          "arch": "amd64v3",
+          "full": "0.117.0-2",
+          "manifest_sha256": "3a4ebb9e265f4d3b75eda24484d7e9a3b87cb7d8e1d159f901046cd32671f827",
+          "manifest_url": "https://github.com/nekrozis/buildsmith/releases/download/nushell/v0.117.0-2/nushell-0.117.0-2-amd64v3.manifest.json",
+          "pkgrel": 2,
+          "pkgver": "0.117.0",
+          "provenance": null,
+          "reproducibility": {
+            "ab": "none",
+            "ab_sha256": [],
+            "ab_verified": false,
+            "cross_env": false,
+            "level": "L0",
+            "verified_on": []
+          },
+          "sha256": "c8671dc6a0e727916dca03340f03c4cc29b3cc6ca3b58e480765ad82ec513345",
+          "size": 26679099,
+          "source_date_epoch": 1794256610,
+          "tag": "nushell/v0.117.0-2",
+          "toolchain": {
+            "go": null,
+            "msvc": null,
+            "runner": "windows-2025",
+            "runner_image": "20261103.298.1",
+            "rust": "1.100.0",
+            "zig": null
+          },
+          "url": "https://github.com/nekrozis/buildsmith/releases/download/nushell/v0.117.0-2/nushell-0.117.0-2-amd64v3.zip"
+        },
         {
           "arch": "amd64v3",
           "full": "0.117.0-1",
