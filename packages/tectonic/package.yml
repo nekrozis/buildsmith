@@ -56,7 +56,7 @@ smoke:
 
 reproducibility:
   level: L0
-  ab: true
+  ab: false
   cross_env: false
   verified_on: []
 
@@ -65,4 +65,5 @@ distribution: private-only
 notes: >-
   Tectonic downloads its TeX bundle on first use; the smoke test only runs
   --version. The C layer is compiled by the cc crate from the tectonic tree and
-  is linked as native objects; only the Rust half is ThinLTO'd.
+  is linked as native objects; only the Rust half is ThinLTO'd. L0: rebuilds
+  differ by a small ordering swap in the Rust code, so A/B is disabled.
