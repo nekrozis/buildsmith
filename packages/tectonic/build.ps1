@@ -31,7 +31,9 @@ rpath = false
 $env:RUSTFLAGS = "-C target-cpu=x86-64-v3 " +
   "--remap-path-prefix=$env:PKG_SRC_DIR=/_/src " +
   "--remap-path-prefix=$env:PKG_WORK_DIR=/_/work"
-$env:_CL_ = "/arch:AVX2 /O2 /Ob2 /DNDEBUG /Brepro " +
+# cl ignores /pathmap unless /experimental:deterministic is on the same
+# command line, so the two flags travel together.
+$env:_CL_ = "/arch:AVX2 /O2 /Ob2 /DNDEBUG /Brepro /experimental:deterministic " +
   "/pathmap:$env:PKG_SRC_DIR=/_/src /pathmap:$env:PKG_WORK_DIR=/_/work"
 $env:VCPKG_C_FLAGS = '/Brepro'
 $env:VCPKG_CXX_FLAGS = '/Brepro'
