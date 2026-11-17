@@ -245,11 +245,46 @@
       "depends": [],
       "distribution": "allowed",
       "homepage": "https://love2d.org",
-      "latest": "11.5-2",
+      "latest": "11.5-3",
       "license": "zlib",
       "notes": "LÖVE 11.5, built from the 11.5 tags of love and megasource. LuaJIT, SDL2, mpg123 and OpenAL Soft are shipped as DLLs; zlib, libogg, libvorbis, libtheora, FreeType and libmodplug are linked into love.dll. LuaJIT is built separately with msvcbuild.bat using the same base flags, then fed to the build as a prebuilt lua51.lib/lua51.dll. The Microsoft VC++ runtime is not bundled; install the matching VC++ Redistributable. license.txt is included; mpg123 (LGPL-2.1) and OpenAL Soft (LGPL-2.0+) remain separate DLLs. L0: A/B is disabled because the separate LuaJIT build is not byte-reproducible.",
       "provides": [],
       "releases": [
+        {
+          "arch": "amd64v3",
+          "full": "11.5-3",
+          "manifest_sha256": "ca8777c21b755e9a0a70eceef9633b249aa10109e9ac6120d1eb9a223b659736",
+          "manifest_url": "https://github.com/nekrozis/buildsmith/releases/download/love/v11.5-3/love-11.5-3-amd64v3.manifest.json",
+          "pkgrel": 3,
+          "pkgver": "11.5",
+          "provenance": null,
+          "reproducibility": {
+            "ab": "same-image",
+            "ab_sha256": [
+              "2e862ad14bd6cd478595622884a2874e7d0add649a742ebd97963c09316e3acd",
+              "2e862ad14bd6cd478595622884a2874e7d0add649a742ebd97963c09316e3acd"
+            ],
+            "ab_verified": true,
+            "cross_env": false,
+            "level": "L2",
+            "verified_on": [
+              "windows-2025"
+            ]
+          },
+          "sha256": "2e862ad14bd6cd478595622884a2874e7d0add649a742ebd97963c09316e3acd",
+          "size": 3978914,
+          "source_date_epoch": 1701607476,
+          "tag": "love/v11.5-3",
+          "toolchain": {
+            "go": null,
+            "msvc": "18",
+            "runner": "windows-2025",
+            "runner_image": "20261103.298.1",
+            "rust": null,
+            "zig": "0.17.1"
+          },
+          "url": "https://github.com/nekrozis/buildsmith/releases/download/love/v11.5-3/love-11.5-3-amd64v3.zip"
+        },
         {
           "arch": "amd64v3",
           "full": "11.5-2",
@@ -440,6 +475,49 @@
         }
       ],
       "summary": "Line-oriented search tool that recursively searches for a regex pattern"
+    },
+    "tectonic": {
+      "conflicts": [],
+      "depends": [],
+      "distribution": "allowed",
+      "homepage": "https://tectonic-typesetting.github.io/",
+      "latest": "0.17.0-1",
+      "license": "MIT",
+      "notes": "Tectonic downloads its TeX bundle on first use; the smoke test only runs --version. The C layer is compiled by the cc crate from the tectonic tree and is linked as native objects; only the Rust half is ThinLTO'd. L0: rebuilds differ by a small ordering swap in the Rust code, so A/B is disabled.",
+      "provides": [],
+      "releases": [
+        {
+          "arch": "amd64v3",
+          "full": "0.17.0-1",
+          "manifest_sha256": "e787cc40866f54d0b580c6a61065795384d4001399f0a7afbec0b9d0edd6c822",
+          "manifest_url": "https://github.com/nekrozis/buildsmith/releases/download/tectonic/v0.17.0-1/tectonic-0.17.0-1-amd64v3.manifest.json",
+          "pkgrel": 1,
+          "pkgver": "0.17.0",
+          "provenance": null,
+          "reproducibility": {
+            "ab": "none",
+            "ab_sha256": [],
+            "ab_verified": false,
+            "cross_env": false,
+            "level": "L0",
+            "verified_on": []
+          },
+          "sha256": "59606a27803f3246f9065157f66872b31d70f85307f6c7ea682a6ba4a47a13c2",
+          "size": 19795700,
+          "source_date_epoch": 1785112406,
+          "tag": "tectonic/v0.17.0-1",
+          "toolchain": {
+            "go": null,
+            "msvc": "18",
+            "runner": "windows-2025",
+            "runner_image": "20261103.298.1",
+            "rust": "1.100.0",
+            "zig": null
+          },
+          "url": "https://github.com/nekrozis/buildsmith/releases/download/tectonic/v0.17.0-1/tectonic-0.17.0-1-amd64v3.zip"
+        }
+      ],
+      "summary": "A complete, self-contained TeX/LaTeX engine"
     }
   },
   "repository": {
