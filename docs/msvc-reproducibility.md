@@ -41,6 +41,10 @@ set(CMAKE_SHARED_LINKER_FLAGS_RELEASE
   "/LTCG /experimental:deterministic /PDBALTPATH:%_PDB%")
 ```
 
+The compiler is explicit about the pairing: without /experimental:deterministic it
+answers `'/pathmap:' requires '/experimental:deterministic'; option ignored` and
+leaves the absolute paths in the objects. The two flags belong together.
+
 link.exe reads options from the `_LINK_` environment variable, which is handy
 when a build script invokes link.exe without going through CMake. The recipes
 put `/Brepro` and `/INCREMENTAL:NO` there; the measured PE timestamp of the
@@ -55,7 +59,7 @@ output is a content hash, so the flag does take effect through that path.
 | /Brepro | link | PE timestamp (a content hash), debug entries |
 | /experimental:deterministic | cl | /Brepro plus warnings; no extra codegen meaning |
 | /experimental:deterministic | link | the link-time code generation path; needed with /GL /LTCG |
-| /pathmap:<from>=<to> | cl | `__FILE__` and debug paths (the work-directory part of A/B) |
+| /pathmap:<from>=<to> | cl | `__FILE__` and debug paths (the work-directory part of A/B); **ignored unless /experimental:deterministic is on the same command line** |
 | /PDBALTPATH:%_PDB% | link | the PDB path written into the image; PDBs are not reproducible anyway |
 | /INCREMENTAL:NO | link | incremental state; incompatible with reproducible links |
 | /OPT:REF,ICF | link | not a determinism flag; keep it stable so the layout is comparable |
