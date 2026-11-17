@@ -17,7 +17,7 @@ packages/<name>/files/        static files shipped inside the archive
 tools/pkgctl.py               the only entry point for build/package/publish
 tools/test_pkgctl.py          offline tests for the tool
 index/index.json              generated package index (committed)
-docs/                         recipe format, arch targets, reproducibility, publishing
+docs/                         recipe format, targets, reproducibility, MSVC/zig toolchains, publishing
 ```
 
 ## Artifacts
