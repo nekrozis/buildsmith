@@ -56,7 +56,7 @@ smoke:
 
 reproducibility:
   level: L0
-  ab: false
+  ab: true
   cross_env: false
   verified_on: []
 
