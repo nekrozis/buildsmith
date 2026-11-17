@@ -60,7 +60,7 @@ reproducibility:
   cross_env: false
   verified_on: []
 
-distribution: private-only
+distribution: allowed
 
 notes: >-
   Tectonic downloads its TeX bundle on first use; the smoke test only runs
