@@ -1,0 +1,44 @@
+name: tectonic
+summary: Placeholder recipe used to exercise CI from other branches
+homepage: https://tectonic-typesetting.github.io/
+license: MIT
+
+version:
+  pkgver: "0.17.0"
+  pkgrel: 1
+
+arch: [amd64v3]
+
+sources:
+  # Pinned at the current upstream release so the source plumbing matches a
+  # real package; the build script does not use it yet.
+  - type: git
+    url: https://github.com/tectonic-typesetting/tectonic.git
+    tag: tectonic@0.17.0
+    commit: 8c0126a9653239a2e6e0a5274af9b8510f643030
+    dir: tectonic
+
+build:
+  script: build.ps1
+  shell: pwsh
+  runner: windows-2025
+  toolchain: {}
+
+stage:
+  - from: ${out}
+    to: bin
+
+smoke: []
+
+reproducibility:
+  level: L0
+  ab: false
+  cross_env: false
+  verified_on: []
+
+distribution: private-only
+
+notes: >-
+  Placeholder. Exists so the CI workflow can be dispatched from branches
+  without building anything real. build.ps1 only stages a marker file; replace
+  it, and the stage/smoke entries, when the package is implemented.
