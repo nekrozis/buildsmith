@@ -42,7 +42,7 @@ build:
     _LINK_: "/INCREMENTAL:NO /OPT:REF,ICF /Brepro"
   overrides:
     - "RUSTFLAGS=-C target-cpu=x86-64-v3 plus path remapping; C dependencies get /arch:AVX2 /O2 /Ob2 /DNDEBUG"
-    - "profile make: inherits release, lto=thin, codegen-units=1, panic=unwind, no incremental"
+    - "profile make: inherits release, lto=fat, codegen-units=1, panic=unwind, no incremental"
     - "C dependencies are vcpkg ports from the pinned baseline (fontconfig, freetype, graphite2, icu), static libraries against the dynamic CRT"
     - "HarfBuzz is the vendored 8.3.0 tree (the tag's submodule commit), not the vcpkg port"
     - "no /GL or /LTCG: Rust performs its own ThinLTO and the C layer stays native"
