@@ -1,5 +1,5 @@
 name: tectonic
-summary: Placeholder recipe used to exercise CI from other branches
+summary: A complete, self-contained TeX/LaTeX engine
 homepage: https://tectonic-typesetting.github.io/
 license: MIT
 
@@ -10,25 +10,49 @@ version:
 arch: [amd64v3]
 
 sources:
-  # Pinned at the current upstream release so the source plumbing matches a
-  # real package; the build script does not use it yet.
   - type: git
     url: https://github.com/tectonic-typesetting/tectonic.git
     tag: tectonic@0.17.0
     commit: 8c0126a9653239a2e6e0a5274af9b8510f643030
     dir: tectonic
+  # HarfBuzz is a git submodule upstream; fetched separately so the large
+  # reference_sources submodule is not needed.
+  - type: git
+    url: https://github.com/harfbuzz/harfbuzz.git
+    commit: 894a1f72ee93a1fd8dc1d9218cb3fd8f048be29a
+    dir: harfbuzz
+  # The C dependencies come from the vcpkg baseline the recipe pins in
+  # Cargo.toml [package.metadata.vcpkg].
+  - type: git
+    url: https://github.com/microsoft/vcpkg.git
+    commit: a62ce77d56ee07513b4b67de1ec2daeaebfae51a
+    dir: vcpkg
 
 build:
   script: build.ps1
   shell: pwsh
   runner: windows-2025
-  toolchain: {}
+  toolchain:
+    rust: "1.100.0"
+    msvc: "18"
+  env:
+    RUSTUP_TOOLCHAIN: "1.100.0"
+    TECTONIC_DEP_BACKEND: vcpkg
+    VCPKGRS_TRIPLET: x64-windows-static-md-release
+    _LINK_: "/INCREMENTAL:NO /OPT:REF,ICF /Brepro"
+  overrides:
+    - "RUSTFLAGS=-C target-cpu=x86-64-v3 plus path remapping; C dependencies get /arch:AVX2 /O2 /Ob2 /DNDEBUG"
+    - "profile make: inherits release, lto=thin, codegen-units=1, panic=unwind, no incremental"
+    - "C dependencies are vcpkg ports from the pinned baseline (fontconfig, freetype, graphite2, icu), static libraries against the dynamic CRT"
+    - "HarfBuzz is the vendored 8.3.0 tree (the tag's submodule commit), not the vcpkg port"
+    - "no /GL or /LTCG: Rust performs its own ThinLTO and the C layer stays native"
 
 stage:
   - from: ${out}
     to: bin
 
-smoke: []
+smoke:
+  - [bin/tectonic.exe, --version]
 
 reproducibility:
   level: L0
@@ -36,9 +60,10 @@ reproducibility:
   cross_env: false
   verified_on: []
 
-distribution: private-only
+distribution: allowed
 
 notes: >-
-  Placeholder. Exists so the CI workflow can be dispatched from branches
-  without building anything real. build.ps1 only stages a marker file; replace
-  it, and the stage/smoke entries, when the package is implemented.
+  Tectonic downloads its TeX bundle on first use; the smoke test only runs
+  --version. The C layer is compiled by the cc crate from the tectonic tree and
+  is linked as native objects; only the Rust half is ThinLTO'd. L0: rebuilds
+  differ by a small ordering swap in the Rust code, so A/B is disabled.
