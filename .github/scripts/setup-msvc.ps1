@@ -142,6 +142,11 @@ $toolset = ($pairs | Where-Object { $_.Name -ieq 'VCToolsVersion' } | Select-Obj
 if (-not $toolset) {
     $toolset = 'unknown'
 }
+else {
+    # The exact toolset patch is an input to the build; the manifest records it
+    # so release notes can name it without guessing.
+    Add-Content -LiteralPath $env:GITHUB_ENV -Value ('PKG_MSVC_TOOLSET={0}' -f $toolset)
+}
 
 Write-Host "MSVC $Version ($Arch), toolset $toolset, from $install"
 Write-Host ("exported {0} variable(s): {1}" -f $exported.Count, ($exported -join ', '))
