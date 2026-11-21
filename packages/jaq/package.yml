@@ -41,10 +41,10 @@ smoke:
   - [bin/jaq.exe, --version]
 
 reproducibility:
-  level: L0
+  level: L2
   ab: true
   cross_env: false
-  verified_on: []
+  verified_on: [windows-2025]
 
 distribution: allowed
 
