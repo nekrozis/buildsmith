@@ -27,11 +27,6 @@ build:
     RUSTFLAGS: "-C target-cpu=x86-64-v3"
     _CL_: "/arch:AVX2 /O2 /Ob2 /DNDEBUG"
     _LINK_: "/INCREMENTAL:NO /OPT:REF,ICF /Brepro"
-  overrides:
-    - "RUSTFLAGS=-C target-cpu=x86-64-v3"
-    - "MSVC /arch:AVX2 and /O2 /Ob2 /DNDEBUG apply to C dependencies; Rust uses target-cpu=x86-64-v3"
-    - "profile make: inherits release, lto=fat, codegen-units=1, panic=unwind, no incremental"
-    - "upstream rust-toolchain.toml and .cargo/ dropped, built with stable rustc instead"
 
 stage:
   - from: ${out}
@@ -47,3 +42,8 @@ reproducibility:
   verified_on: []
 
 distribution: allowed
+
+notes: >-
+  L0: rebuilds of the same tree differ, so A/B is disabled and the
+  nondeterminism is not yet isolated. Bundled C dependencies (SQLite, LMDB,
+  libgit2, zlib, ring, blake3) are compiled with MSVC.
