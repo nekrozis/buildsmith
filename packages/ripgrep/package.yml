@@ -42,6 +42,7 @@ reproducibility:
   verified_on: [windows-2025]
 
 distribution: allowed
+runtime: "Static CRT; no Visual C++ Redistributable required."
 notes: >-
   Built with PCRE2 support, so -P/--pcre2 and --auto-hybrid-regex work.
   PCRE2 is linked statically, like the rest of the C runtime.

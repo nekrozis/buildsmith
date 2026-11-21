@@ -65,6 +65,7 @@ reproducibility:
   verified_on: [windows-2025]
 
 distribution: private-only
+runtime: "Static CRT; no Visual C++ Redistributable required."
 notes: >-
   The Aseprite EULA allows building from source for personal use but does not
   permit redistributing compiled binaries. This recipe is kept so the build can

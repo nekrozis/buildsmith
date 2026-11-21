@@ -55,6 +55,7 @@ reproducibility:
   verified_on: [windows-2025]
 
 distribution: allowed         # allowed | private-only
+runtime: "Static Go binary; no Visual C++ Redistributable required."  # optional, one line
 depends: []                   # optional, documented in the index
 provides: []
 conflicts: []

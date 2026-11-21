@@ -49,3 +49,4 @@ reproducibility:
   verified_on: [windows-2025]
 
 distribution: allowed
+runtime: "UCRT only; no MinGW runtime DLLs and no Redistributable required."

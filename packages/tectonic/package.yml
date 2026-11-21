@@ -55,6 +55,7 @@ reproducibility:
   verified_on: []
 
 distribution: allowed
+runtime: "Dynamic CRT; install the Microsoft Visual C++ Redistributable."
 
 notes: >-
   Tectonic downloads its TeX bundle on first use; the smoke test only runs
