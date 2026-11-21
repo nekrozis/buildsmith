@@ -1,0 +1,44 @@
+name: jq
+summary: Placeholder recipe used to exercise CI from other branches
+homepage: https://jqlang.github.io/jq/
+license: MIT
+
+version:
+  pkgver: "1.8.2"
+  pkgrel: 1
+
+arch: [amd64v3]
+
+sources:
+  # Pinned at the current upstream release so the source plumbing matches a
+  # real package; the build script does not use it yet.
+  - type: git
+    url: https://github.com/jqlang/jq.git
+    tag: jq-${pkgver}
+    commit: 34f7186b86743a083a589741b6cea95293524108
+    dir: jq
+
+build:
+  script: build.ps1
+  shell: pwsh
+  runner: windows-2025
+  toolchain: {}
+
+stage:
+  - from: ${out}
+    to: bin
+
+smoke: []
+
+reproducibility:
+  level: L0
+  ab: false
+  cross_env: false
+  verified_on: []
+
+distribution: private-only
+
+notes: >-
+  Placeholder. Exists so the CI workflow can be dispatched from branches
+  without building anything real. build.ps1 only stages a marker file; replace
+  it, and the stage/smoke entries, when the package is implemented.
