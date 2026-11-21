@@ -65,6 +65,7 @@ reproducibility:
   verified_on: [windows-2025]
 
 distribution: allowed
+runtime: "Dynamic CRT; install the Microsoft Visual C++ Redistributable."
 notes: >-
   LÖVE 11.5, built from the 11.5 tags of love and megasource. LuaJIT, SDL2,
   mpg123 and OpenAL Soft are shipped as DLLs; zlib, libogg, libvorbis,

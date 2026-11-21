@@ -29,6 +29,13 @@ SHELLS = ("bash", "pwsh")
 SCRIPT_SUFFIX = {"pwsh": ".ps1", "bash": ".sh"}
 DISTRIBUTIONS = ("allowed", "private-only")
 LEVELS = ("L0", "L1", "L2", "L3")
+ARCH_LABELS = {
+    "amd64v3": "x86-64-v3 (AVX2)",
+    "amd64": "x86-64",
+    "arm64": "arm64",
+}
+TAG_RE = re.compile(r"^(?P<name>[a-z][a-z0-9-]*)/v(?P<full>[0-9][0-9A-Za-z.+]*-[0-9]+)$")
+GITHUB_URL_RE = re.compile(r"^https://github\.com/([^/]+)/([^/]+?)(?:\.git)?/?$")
 ZIP_EPOCH_MIN = 315532800  # 1980-01-01T00:00:00Z, the earliest ZIP timestamp
 
 # A compiler is the one input a recipe cannot pin by hash in its sources: the
@@ -69,6 +76,7 @@ TOP_KEYS = {
     "smoke",
     "reproducibility",
     "distribution",
+    "runtime",
     "notes",
     "depends",
     "provides",
@@ -207,7 +215,7 @@ def validate_recipe(recipe):
     for key in data:
         if key not in TOP_KEYS:
             problems.append(f"unknown top-level key {key!r}")
-    for key in sorted(TOP_KEYS - {"notes", "depends", "provides", "conflicts"}):
+    for key in sorted(TOP_KEYS - {"runtime", "notes", "depends", "provides", "conflicts"}):
         if key not in data:
             problems.append(f"missing required key {key!r}")
     if problems:
@@ -337,6 +345,10 @@ def validate_recipe(recipe):
 
     check(data["distribution"] in DISTRIBUTIONS,
           f"distribution must be one of {', '.join(DISTRIBUTIONS)}")
+    runtime = data.get("runtime")
+    if runtime is not None:
+        check(isinstance(runtime, str) and bool(runtime.strip()),
+              "runtime must be a non-empty string")
 
     if problems:
         raise Fail(f"{where}: " + "; ".join(problems))
@@ -749,6 +761,7 @@ def cmd_package(args):
         "homepage": recipe["homepage"],
         "license": recipe["license"],
         "distribution": recipe["distribution"],
+        "runtime": recipe.get("runtime"),
         "notes": recipe.get("notes"),
         "depends": recipe.get("depends", []),
         "provides": recipe.get("provides", []),
@@ -784,6 +797,7 @@ def cmd_package(args):
         },
         "toolchain": {
             **{key: recipe["build"].get("toolchain", {}).get(key) for key in ("go", "rust", "msvc", "zig")},
+            "msvc_toolset": os.environ.get("PKG_MSVC_TOOLSET") or None,
             "runner": recipe["build"]["runner"],
             "runner_image": os.environ.get("ImageVersion"),
         },
@@ -817,6 +831,181 @@ def write_sha256sums(out_dir):
         if path.is_file() and (path.suffix == ".zip" or path.name.endswith(".manifest.json")):
             lines.append(f"{sha256_file(path)}  {path.name}")
     (out_dir / "SHA256SUMS").write_text("\n".join(lines) + "\n", encoding="utf-8", newline="\n")
+
+
+def split_full_version(full):
+    pkgver, _, pkgrel = full.rpartition("-")
+    if not pkgver or not pkgrel.isdigit():
+        return full, None
+    return pkgver, int(pkgrel)
+
+
+def github_release_url(source):
+    tag = source.get("tag")
+    url = str(source.get("url") or "")
+    if not tag:
+        return None
+    match = GITHUB_URL_RE.match(url)
+    if not match:
+        return None
+    return f"https://github.com/{match.group(1)}/{match.group(2)}/releases/tag/{tag}"
+
+
+def git_capture(root, *args):
+    result = subprocess.run(["git", "-C", str(root), *args], text=True, capture_output=True)
+    if result.returncode != 0:
+        raise Fail(f"git {' '.join(args)} failed: {result.stderr.strip()}")
+    return result.stdout
+
+
+def notes_body(manifest, prev_tag=None, repo=None, source_digest=None, source_ref=None):
+    name = manifest["name"]
+    version = manifest["version"]
+    full = version["full"]
+    pkgver = version["pkgver"]
+    arch = manifest["arch"]
+    title = f"{name} {full} (windows-{arch})"
+
+    prev_full = None
+    prev_pkgver = None
+    commits = []
+    if prev_tag:
+        match = TAG_RE.match(prev_tag)
+        if not match:
+            raise Fail(f"--prev-tag {prev_tag!r} is not <name>/v<pkgver>-<pkgrel>")
+        if match.group("name") != name:
+            raise Fail(f"--prev-tag {prev_tag} belongs to {match.group('name')}, not {name}")
+        prev_full = match.group("full")
+        prev_pkgver, _ = split_full_version(prev_full)
+        root = repo_root()
+        git_capture(root, "rev-parse", "--verify", f"{prev_tag}^{{commit}}")
+        log_output = git_capture(
+            root, "log", "--no-merges", "--reverse", "--format=%s",
+            f"{prev_tag}..HEAD", "--", f"packages/{name}",
+        )
+        prefix = f"{name}: "
+        for line in log_output.splitlines():
+            subject = line.strip()
+            if not subject:
+                continue
+            if subject.startswith(prefix):
+                subject = subject[len(prefix):]
+            commits.append(subject)
+
+    source = next((item for item in manifest.get("sources", []) if item.get("tag")), None)
+    changelog = github_release_url(source) if source else None
+    if prev_pkgver and prev_pkgver == pkgver:
+        upstream = f"Upstream {pkgver} is unchanged since {prev_full}."
+    elif prev_pkgver:
+        upstream = f"Upstream {pkgver} (was {prev_pkgver})."
+    else:
+        upstream = f"Upstream {pkgver}."
+    if changelog:
+        upstream += f" Changelog: {changelog}"
+
+    changes = []
+    if prev_full:
+        if prev_pkgver == pkgver:
+            changes.append(f"`{prev_full}` -> `{full}`; packaging only.")
+        else:
+            changes.append(f"`{prev_full}` -> `{full}`; upstream {prev_pkgver} -> {pkgver}.")
+    else:
+        changes.append(f"Initial build of `{full}`.")
+    changes.extend(commits)
+
+    repro = manifest.get("reproducibility") or {}
+    level = repro.get("level") or "L0"
+    verified_on = ", ".join(repro.get("verified_on") or []) or "no runner recorded"
+    if level == "L3":
+        repro_line = f"**L3** — byte-identical across runner images ({verified_on})."
+    elif level == "L2":
+        if repro.get("ab_verified"):
+            repro_line = f"**L2** — A/B on {verified_on} produced identical archives"
+        else:
+            repro_line = "**L2** — same-image claim, but no A/B is recorded"
+        repro_line += "." if repro.get("cross_env") else "; not verified across runner images."
+    elif level == "L1":
+        repro_line = "**L1** — stable on one machine, not across environments."
+    else:
+        repro_line = "**L0** — builds are not byte-identical between runs; A/B is disabled."
+
+    archive = manifest["archive"]
+    verification = [
+        f"- Reproducibility: {repro_line}",
+        f"- Archive: `{archive['file']}` — {archive['size']:,} bytes, `sha256:{archive['sha256']}`",
+    ]
+    if repo and source_digest and source_ref:
+        if not re.fullmatch(r"[0-9a-f]{40}", source_digest):
+            raise Fail("--source-digest must be a full 40-hex commit SHA")
+        verification.append(
+            "\nVerify the attestation:\n\n"
+            "```bash\n"
+            f"gh attestation verify {archive['file']} \\\n"
+            f"  --repo {repo} \\\n"
+            f"  --signer-workflow {repo}/.github/workflows/package.yml \\\n"
+            f"  --source-digest {source_digest} \\\n"
+            f"  --source-ref {source_ref}\n"
+            "```"
+        )
+
+    toolchain = manifest.get("toolchain") or {}
+    built = []
+    if toolchain.get("go"):
+        built.append(f"go {toolchain['go']}")
+    if toolchain.get("rust"):
+        built.append(f"rustc {toolchain['rust']}")
+    if toolchain.get("msvc"):
+        if toolchain.get("msvc_toolset"):
+            built.append(f"MSVC {toolchain['msvc_toolset']}")
+        else:
+            built.append(f"MSVC {toolchain['msvc']} (major bound)")
+    if toolchain.get("zig"):
+        built.append(f"zig {toolchain['zig']}")
+    runner = (manifest.get("build") or {}).get("runner") or toolchain.get("runner")
+    image = toolchain.get("runner_image")
+    if runner:
+        built.append(f"{runner} ({image})" if image else runner)
+
+    summary = (manifest.get("summary") or "").rstrip(".")
+    header = f"{name} {full} for Windows, {ARCH_LABELS.get(arch, arch)}."
+    if summary:
+        header += f" {summary}."
+
+    sections = [
+        header,
+        "## Upstream Changes\n" + upstream,
+        "## Packaging Changes\n" + "\n".join(f"- {line}" for line in changes),
+    ]
+    overrides = (manifest.get("build") or {}).get("overrides") or []
+    if overrides:
+        sections.append("## Differences from upstream\n" +
+                        "\n".join(f"- {item}" for item in overrides))
+    sections.append("## Verification\n" + "\n".join(verification))
+    if manifest.get("runtime"):
+        sections.append(f"Runtime: {manifest['runtime']}")
+    if built:
+        sections.append(f"Built with: {' · '.join(built)}")
+    return title, "\n\n".join(sections)
+
+
+def cmd_notes(args):
+    path = Path(args.manifest)
+    if not path.is_file():
+        raise Fail(f"manifest {path} does not exist")
+    manifest = json.loads(path.read_text(encoding="utf-8"))
+    repo = args.repo or os.environ.get("GITHUB_REPOSITORY") or None
+    digest = args.source_digest or os.environ.get("GITHUB_SHA") or None
+    ref = args.source_ref or os.environ.get("GITHUB_REF") or None
+    title, body = notes_body(manifest, prev_tag=args.prev_tag or None,
+                             repo=repo, source_digest=digest, source_ref=ref)
+    if args.out:
+        Path(args.out).write_text(body + "\n", encoding="utf-8", newline="\n")
+        log(f"wrote {args.out}")
+    else:
+        print(body)
+    if args.title_out:
+        Path(args.title_out).write_text(title + "\n", encoding="utf-8", newline="\n")
+        log(f"wrote {args.title_out}")
 
 
 def resolve_smoke_program(parts, target_root):
@@ -1151,6 +1340,16 @@ def main(argv=None):
     verify = sub.add_parser("verify")
     verify.add_argument("--manifest", required=True)
     verify.set_defaults(func=cmd_verify)
+
+    notes = sub.add_parser("notes")
+    notes.add_argument("--manifest", required=True)
+    notes.add_argument("--prev-tag", help="previous release tag, <name>/v<pkgver>-<pkgrel>")
+    notes.add_argument("--repo", help="owner/name used in the attestation command")
+    notes.add_argument("--source-digest", help="commit SHA the build ran from")
+    notes.add_argument("--source-ref", help="git ref the build ran from")
+    notes.add_argument("--out", help="write the body here instead of stdout")
+    notes.add_argument("--title-out", help="write the release title here")
+    notes.set_defaults(func=cmd_notes)
 
     validate = sub.add_parser("validate")
     validate.add_argument("--package")

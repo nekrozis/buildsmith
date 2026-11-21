@@ -43,3 +43,4 @@ reproducibility:
   verified_on: [windows-2025]
 
 distribution: allowed
+runtime: "Static Go binary; no Visual C++ Redistributable required."

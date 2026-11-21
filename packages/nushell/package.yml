@@ -42,6 +42,7 @@ reproducibility:
   verified_on: []
 
 distribution: allowed
+runtime: "Dynamic CRT; install the Microsoft Visual C++ Redistributable."
 
 notes: >-
   L0: rebuilds of the same tree differ, so A/B is disabled and the

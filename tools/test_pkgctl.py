@@ -485,6 +485,143 @@ class AssembleTest(PkgctlTestCase):
         self.assertIn("reproducibility.ab", result.stderr)
 
 
+class NotesTest(PkgctlTestCase):
+    def write_manifest(self, overrides=None, **changes):
+        manifest = {
+            "schema": 1,
+            "name": "demo",
+            "summary": "test package",
+            "homepage": "https://example.invalid/demo",
+            "license": "MIT",
+            "distribution": "allowed",
+            "runtime": "Dynamic CRT; install the Microsoft Visual C++ Redistributable.",
+            "notes": None,
+            "depends": [],
+            "provides": [],
+            "conflicts": [],
+            "version": {"pkgver": "1.0.0", "pkgrel": 2, "full": "1.0.0-2"},
+            "arch": "amd64v3",
+            "archive": {
+                "file": "demo-1.0.0-2-amd64v3.zip",
+                "format": "zip",
+                "root": "demo",
+                "size": 12345,
+                "sha256": "a" * 64,
+            },
+            "files": [],
+            "sources": [{
+                "type": "git",
+                "url": "https://github.com/example/demo.git",
+                "tag": "v1.0.0",
+                "commit": "b" * 40,
+                "sha256": None,
+            }],
+            "build": {
+                "script": "build.sh",
+                "shell": "bash",
+                "runner": "windows-2025",
+                "recipe_sha256": "c" * 64,
+                "script_sha256": "d" * 64,
+                "env": {},
+                "overrides": ["does X; upstream does Y."],
+            },
+            "toolchain": {
+                "go": None,
+                "rust": "1.100.0",
+                "msvc": "18",
+                "msvc_toolset": "14.51.36231",
+                "zig": None,
+                "runner": "windows-2025",
+                "runner_image": "20261103.298.1",
+            },
+            "reproducibility": {
+                "level": "L2",
+                "ab": "same-image",
+                "ab_verified": True,
+                "ab_sha256": ["a" * 64, "a" * 64],
+                "cross_env": False,
+                "verified_on": ["windows-2025"],
+            },
+            "source_date_epoch": 1704164645,
+        }
+        if overrides is not None:
+            manifest["build"]["overrides"] = overrides
+        manifest.update(changes)
+        path = self.tmp / "demo.manifest.json"
+        path.write_text(json.dumps(manifest), encoding="utf-8")
+        return path
+
+    def test_notes_render_the_template(self):
+        manifest = self.write_manifest()
+        result = self.pkgctl(
+            "notes", "--manifest", str(manifest), "--repo", "nekrozis/buildsmith",
+            "--source-digest", "c" * 40, "--source-ref", "refs/heads/main",
+        )
+        text = result.stdout
+        self.assertIn("demo 1.0.0-2 for Windows, x86-64-v3 (AVX2). test package.", text)
+        self.assertIn("## Upstream Changes\nUpstream 1.0.0. "
+                      "Changelog: https://github.com/example/demo/releases/tag/v1.0.0", text)
+        self.assertIn("## Packaging Changes\n- Initial build of `1.0.0-2`.", text)
+        self.assertIn("## Differences from upstream\n- does X; upstream does Y.", text)
+        self.assertIn("**L2** — A/B on windows-2025 produced identical archives", text)
+        self.assertIn("12,345 bytes, `sha256:" + "a" * 64, text)
+        self.assertIn("gh attestation verify demo-1.0.0-2-amd64v3.zip \\\n"
+                      "  --repo nekrozis/buildsmith \\\n"
+                      "  --signer-workflow nekrozis/buildsmith/.github/workflows/package.yml \\\n"
+                      "  --source-digest " + "c" * 40 + " \\\n"
+                      "  --source-ref refs/heads/main", text)
+        self.assertIn("Runtime: Dynamic CRT; install the Microsoft Visual C++ "
+                      "Redistributable.", text)
+        self.assertIn("Built with: rustc 1.100.0 · MSVC 14.51.36231 · "
+                      "windows-2025 (20261103.298.1)", text)
+
+    def test_notes_omit_differences_when_there_are_none(self):
+        manifest = self.write_manifest(overrides=[])
+        result = self.pkgctl("notes", "--manifest", str(manifest))
+        self.assertNotIn("## Differences from upstream", result.stdout)
+        self.assertIn("## Verification", result.stdout)
+
+    def test_notes_record_the_packaging_delta(self):
+        source, commit = self.make_source_repo()
+        self.write_recipe(commit=commit, source_url=str(source))
+        self.git(self.root, "init", "--quiet", "--initial-branch=main")
+        self.git(self.root, "add", "-A")
+        self.git(self.root, "commit", "--quiet", "-m", "demo: initial recipe")
+        self.git(self.root, "tag", "demo/v1.0.0-1")
+        recipe = self.root / "packages" / "demo" / "package.yml"
+        recipe.write_text(recipe.read_text(encoding="utf-8").replace("pkgrel: 1", "pkgrel: 2"),
+                          encoding="utf-8")
+        self.git(self.root, "commit", "--quiet", "-am", "demo: enable pgo")
+        manifest = self.write_manifest()
+        result = self.pkgctl("notes", "--manifest", str(manifest),
+                             "--prev-tag", "demo/v1.0.0-1")
+        self.assertIn("Upstream 1.0.0 is unchanged since 1.0.0-1.", result.stdout)
+        self.assertIn("`1.0.0-1` -> `1.0.0-2`; packaging only.", result.stdout)
+        self.assertIn("- enable pgo", result.stdout)
+        self.assertNotIn("initial recipe", result.stdout)
+
+    def test_notes_write_body_and_title(self):
+        manifest = self.write_manifest()
+        body = self.tmp / "notes.md"
+        title = self.tmp / "title.txt"
+        self.pkgctl("notes", "--manifest", str(manifest), "--out", str(body),
+                    "--title-out", str(title))
+        self.assertIn("## Verification", body.read_text(encoding="utf-8"))
+        self.assertEqual(title.read_text(encoding="utf-8").strip(),
+                         "demo 1.0.0-2 (windows-amd64v3)")
+
+    def test_unknown_prev_tag_is_refused(self):
+        source, commit = self.make_source_repo()
+        self.write_recipe(commit=commit, source_url=str(source))
+        self.git(self.root, "init", "--quiet", "--initial-branch=main")
+        self.git(self.root, "add", "-A")
+        self.git(self.root, "commit", "--quiet", "-m", "demo: initial recipe")
+        manifest = self.write_manifest()
+        result = self.pkgctl("notes", "--manifest", str(manifest),
+                             "--prev-tag", "demo/v9.9.9-1", expect=1)
+        self.assertIn("rev-parse", result.stderr)
+
+
 class IndexTest(PkgctlTestCase):
     def make_manifests(self):
         source, commit = self.make_source_repo()

@@ -41,6 +41,7 @@ reproducibility:
   verified_on: [windows-2025]
 
 distribution: allowed
+runtime: "Static CRT; no Visual C++ Redistributable required."
 notes: >-
   Package name follows Debian and Fedora (fd-find); the executable keeps the
   upstream name fd.exe. Built from source with the repository's pinned Rust

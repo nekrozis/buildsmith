@@ -43,6 +43,7 @@ reproducibility:
   verified_on: [windows-2025]
 
 distribution: allowed
+runtime: "Dynamic CRT; install the Microsoft Visual C++ Redistributable."
 
 notes: >-
   Builds the jaq binary from the upstream workspace; jaq-play (the egui
