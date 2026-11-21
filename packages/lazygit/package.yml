@@ -28,8 +28,6 @@ build:
     GOARCH: amd64
     GOAMD64: v3
     GOFLAGS: "-buildvcs=false -trimpath"
-  overrides:
-    - "GOAMD64=v3, upstream goreleaser builds windows/amd64 with the default v1"
 
 stage:
   - from: ${out}

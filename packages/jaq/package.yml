@@ -28,10 +28,6 @@ build:
     RUSTFLAGS: "-C target-cpu=x86-64-v3"
     _CL_: "/arch:AVX2 /O2 /Ob2 /DNDEBUG /Brepro"
     _LINK_: "/INCREMENTAL:NO /OPT:REF,ICF /Brepro"
-  overrides:
-    - "RUSTFLAGS=-C target-cpu=x86-64-v3, upstream release binaries are built at the default x86-64 baseline"
-    - "MSVC /arch:AVX2 and /O2 /Ob2 /DNDEBUG apply to the mimalloc C dependency, which is enabled by default upstream"
-    - "profile make: inherits release, lto=fat, codegen-units=1, strip=debuginfo, no incremental"
 
 stage:
   - from: ${out}
