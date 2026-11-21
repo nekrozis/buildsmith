@@ -608,7 +608,7 @@ class NotesTest(PkgctlTestCase):
                     "--title-out", str(title))
         self.assertIn("## Verification", body.read_text(encoding="utf-8"))
         self.assertEqual(title.read_text(encoding="utf-8").strip(),
-                         "demo 1.0.0-2 (windows-amd64v3)")
+                         "demo 1.0.0-2")
 
     def test_unknown_prev_tag_is_refused(self):
         source, commit = self.make_source_repo()

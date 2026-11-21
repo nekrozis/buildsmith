@@ -30,6 +30,9 @@ One archive per package, version and architecture:
 SHA256SUMS
 ```
 
+Every artifact targets Windows on x86-64-v3 (AVX2); the `arch` slot in the
+file name carries that requirement (`docs/targets.md`).
+
 Inside the archive every file lives under `<name>/`, executables under
 `<name>/bin/`. Timestamps, permissions and entry order are normalised, so
 packaging the same tree twice produces the same bytes.
