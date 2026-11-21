@@ -45,6 +45,7 @@ python tools/pkgctl.py build --package gopls --id a --work work
 python tools/pkgctl.py smoke --package gopls --id a --work work
 python tools/pkgctl.py package --package gopls --id a --work work --out dist/a
 python tools/pkgctl.py verify --manifest dist/a/gopls-0.24.0-1-amd64v3.manifest.json
+python tools/pkgctl.py notes --manifest dist/a/gopls-0.24.0-1-amd64v3.manifest.json --out notes.md
 ```
 
 `python tools/test_pkgctl.py` runs the tool tests; they are hermetic (temporary
@@ -54,8 +55,9 @@ repositories, local git fixtures, no network).
 
 - `package.yml` — reusable: plan, build (one job per build id), assemble and
   attest. Called by the per-package workflows.
-- `publish.yml` — reusable: re-verifies the archive and creates a **draft**
-  GitHub release. Only invoked when a workflow run asks for `publish`.
+- `publish.yml` — reusable: re-verifies the archive, generates the body with
+  `pkgctl notes` and creates a **draft** GitHub release. Only invoked when a
+  workflow run asks for `publish`.
 - `<package>.yml` — manual trigger with optional `pkgver` / `pkgrel` /
   `publish` inputs.
 - `index.yml` — weekly (or manual) regeneration of `index/index.json` from the
