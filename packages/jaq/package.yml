@@ -1,5 +1,5 @@
 name: jaq
-summary: Placeholder recipe used to exercise CI from other branches
+summary: A jq clone focused on correctness, speed and simplicity
 homepage: https://github.com/01mf02/jaq
 license: MIT
 
@@ -10,8 +10,6 @@ version:
 arch: [amd64v3]
 
 sources:
-  # Pinned at the current upstream release so the source plumbing matches a
-  # real package; the build script does not use it yet.
   - type: git
     url: https://github.com/01mf02/jaq.git
     tag: v${pkgver}
@@ -22,23 +20,35 @@ build:
   script: build.ps1
   shell: pwsh
   runner: windows-2025
-  toolchain: {}
+  toolchain:
+    rust: "1.100.0"
+    msvc: "18"
+  env:
+    RUSTUP_TOOLCHAIN: "1.100.0"
+    RUSTFLAGS: "-C target-cpu=x86-64-v3"
+    _CL_: "/arch:AVX2 /O2 /Ob2 /DNDEBUG /Brepro"
+    _LINK_: "/INCREMENTAL:NO /OPT:REF,ICF /Brepro"
+  overrides:
+    - "RUSTFLAGS=-C target-cpu=x86-64-v3, upstream release binaries are built at the default x86-64 baseline"
+    - "MSVC /arch:AVX2 and /O2 /Ob2 /DNDEBUG apply to the mimalloc C dependency, which is enabled by default upstream"
+    - "profile make: inherits release, lto=fat, codegen-units=1, strip=debuginfo, no incremental"
 
 stage:
   - from: ${out}
     to: bin
 
-smoke: []
+smoke:
+  - [bin/jaq.exe, --version]
 
 reproducibility:
-  level: L0
-  ab: false
+  level: L2
+  ab: true
   cross_env: false
-  verified_on: []
+  verified_on: [windows-2025]
 
-distribution: private-only
+distribution: allowed
 
 notes: >-
-  Placeholder. Exists so the CI workflow can be dispatched from branches
-  without building anything real. build.ps1 only stages a marker file; replace
-  it, and the stage/smoke entries, when the package is implemented.
+  Builds the jaq binary from the upstream workspace; jaq-play (the egui
+  playground) is not built. The default mimalloc allocator is kept, and its C
+  source is compiled with MSVC as part of the build.
