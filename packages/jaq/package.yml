@@ -1,0 +1,44 @@
+name: jaq
+summary: Placeholder recipe used to exercise CI from other branches
+homepage: https://github.com/01mf02/jaq
+license: MIT
+
+version:
+  pkgver: "3.2.0"
+  pkgrel: 1
+
+arch: [amd64v3]
+
+sources:
+  # Pinned at the current upstream release so the source plumbing matches a
+  # real package; the build script does not use it yet.
+  - type: git
+    url: https://github.com/01mf02/jaq.git
+    tag: v${pkgver}
+    commit: 0ee33bbcf44aed00c91748071e5031e8a5410339
+    dir: jaq
+
+build:
+  script: build.ps1
+  shell: pwsh
+  runner: windows-2025
+  toolchain: {}
+
+stage:
+  - from: ${out}
+    to: bin
+
+smoke: []
+
+reproducibility:
+  level: L0
+  ab: false
+  cross_env: false
+  verified_on: []
+
+distribution: private-only
+
+notes: >-
+  Placeholder. Exists so the CI workflow can be dispatched from branches
+  without building anything real. build.ps1 only stages a marker file; replace
+  it, and the stage/smoke entries, when the package is implemented.
