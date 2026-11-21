@@ -1,9 +1,10 @@
 # Architecture targets
 
 Every package in this repository is built for **one** target: `amd64v3`
-(x86-64-v3, AVX2 class). There is no baseline variant, matching what Arch,
-CachyOS and Gentoo do by default: ship the optimised build, and let the package
-name carry the requirement.
+(x86-64-v3, AVX2 class). There is no baseline variant: a single target keeps
+the build matrix and the index small, and the archive name carries the
+requirement. x86-64-v3 covers Intel Haswell (2013) and AMD Excavator (2015)
+and newer.
 
 ```
 amd64    baseline x86-64 (SSE2)

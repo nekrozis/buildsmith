@@ -45,6 +45,8 @@ Built with: MSVC 14.51.36231 · zig 0.17.1 · windows-2025 (20261103.298.1)
 
 ## Rules
 
+- The release title is `<name> <pkgver>-<pkgrel>`. The platform line stays in
+  the body header and in the README; the title does not repeat it.
 - `Upstream Changes` links the upstream release page for the pinned tag and
   never copies upstream prose. When `pkgver` does not change it says so.
 - `Packaging Changes` is the delta since `<prev-tag>`: the version transition

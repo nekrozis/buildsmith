@@ -864,7 +864,7 @@ def notes_body(manifest, prev_tag=None, repo=None, source_digest=None, source_re
     full = version["full"]
     pkgver = version["pkgver"]
     arch = manifest["arch"]
-    title = f"{name} {full} (windows-{arch})"
+    title = f"{name} {full}"
 
     prev_full = None
     prev_pkgver = None
