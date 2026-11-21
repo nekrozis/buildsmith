@@ -28,12 +28,11 @@ build:
     GOARCH: amd64
     GOAMD64: v3
     GOFLAGS: "-buildvcs=false -trimpath -pgo=default.pgo"
+  # Upstream's release workflow runs `make build-all`; its Windows build lines
+  # pass no GOFLAGS, so the official windows/amd64 exe gets neither PGO nor PIE.
+  # Version metadata and the embedded web UI are repository build mechanics.
   overrides:
-    - "GOAMD64=v3, upstream build-all emits windows/amd64 at the default v1"
-    - "PGO enabled with the repository's own default.pgo, as the upstream Makefile build target does; the profile is pinned by the commit and the official release binaries are built without it"
-    - "buildmode left at the Go default instead of upstream's -buildmode=pie; PIE on windows/amd64 changes the emitted binary without a user-visible gain"
-    - "build.Version/Built time/Built user are injected from the recipe and SOURCE_DATE_EPOCH; upstream derives them from git describe and date, which would break reproducibility"
-    - "the committed webui/dist is embedded as shipped; the React frontend is not rebuilt, so Node.js is not part of the toolchain"
+    - "PGO uses the committed `default.pgo`; upstream's Windows release build runs `go build` without GOFLAGS, so the official `gdu_windows_amd64.exe` is not PGO."
 
 stage:
   - from: ${out}
