@@ -144,6 +144,54 @@
       ],
       "summary": "Go language server"
     },
+    "jaq": {
+      "conflicts": [],
+      "depends": [],
+      "distribution": "allowed",
+      "homepage": "https://github.com/01mf02/jaq",
+      "latest": "3.2.0-1",
+      "license": "MIT",
+      "notes": "Builds the jaq binary from the upstream workspace; jaq-play (the egui playground) is not built. The default mimalloc allocator is kept, and its C source is compiled with MSVC as part of the build.",
+      "provides": [],
+      "releases": [
+        {
+          "arch": "amd64v3",
+          "full": "3.2.0-1",
+          "manifest_sha256": "b24170adb795726a912e0a84364901f9b1b6399a74a3dea40f77254d926f93aa",
+          "manifest_url": "https://github.com/nekrozis/buildsmith/releases/download/jaq/v3.2.0-1/jaq-3.2.0-1-amd64v3.manifest.json",
+          "pkgrel": 1,
+          "pkgver": "3.2.0",
+          "provenance": null,
+          "reproducibility": {
+            "ab": "same-image",
+            "ab_sha256": [
+              "294cfdfb4be8d2e8c810947df3ebae89a1eb188883a1b35881c33858df357765",
+              "294cfdfb4be8d2e8c810947df3ebae89a1eb188883a1b35881c33858df357765"
+            ],
+            "ab_verified": true,
+            "cross_env": false,
+            "level": "L2",
+            "verified_on": [
+              "windows-2025"
+            ]
+          },
+          "sha256": "294cfdfb4be8d2e8c810947df3ebae89a1eb188883a1b35881c33858df357765",
+          "size": 1936392,
+          "source_date_epoch": 1795078419,
+          "tag": "jaq/v3.2.0-1",
+          "toolchain": {
+            "go": null,
+            "msvc": "18",
+            "runner": "windows-2025",
+            "runner_image": "20261116.315.1",
+            "rust": "1.100.0",
+            "zig": null
+          },
+          "url": "https://github.com/nekrozis/buildsmith/releases/download/jaq/v3.2.0-1/jaq-3.2.0-1-amd64v3.zip"
+        }
+      ],
+      "summary": "A jq clone focused on correctness, speed and simplicity"
+    },
     "lazygit": {
       "conflicts": [],
       "depends": [],
