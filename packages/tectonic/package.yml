@@ -40,12 +40,6 @@ build:
     TECTONIC_DEP_BACKEND: vcpkg
     VCPKGRS_TRIPLET: x64-windows-static-md-release
     _LINK_: "/INCREMENTAL:NO /OPT:REF,ICF /Brepro"
-  overrides:
-    - "RUSTFLAGS=-C target-cpu=x86-64-v3 plus path remapping; C dependencies get /arch:AVX2 /O2 /Ob2 /DNDEBUG"
-    - "profile make: inherits release, lto=thin, codegen-units=1, panic=unwind, no incremental"
-    - "C dependencies are vcpkg ports from the pinned baseline (fontconfig, freetype, graphite2, icu), static libraries against the dynamic CRT"
-    - "HarfBuzz is the vendored 8.3.0 tree (the tag's submodule commit), not the vcpkg port"
-    - "no /GL or /LTCG: Rust performs its own ThinLTO and the C layer stays native"
 
 stage:
   - from: ${out}
@@ -65,5 +59,6 @@ distribution: allowed
 notes: >-
   Tectonic downloads its TeX bundle on first use; the smoke test only runs
   --version. The C layer is compiled by the cc crate from the tectonic tree and
-  is linked as native objects; only the Rust half is ThinLTO'd. L0: rebuilds
-  differ by a small ordering swap in the Rust code, so A/B is disabled.
+  is linked as native objects; only the Rust half is ThinLTO'd (`lto = "thin"`,
+  not the repository's fat default). L0: rebuilds differ by a small ordering
+  swap in the Rust code, so A/B is disabled.

@@ -30,14 +30,10 @@ build:
   env:
     ZIG_TARGET: x86_64-windows-gnu
     ZIG_CPU: x86_64_v3
+  # Upstream's Makefile.wnm builds with MSVC; zig cc pins the compiler, libc,
+  # linker and UCRT headers in one checksummed archive.
   overrides:
-    - "zig cc instead of MSVC: the compiler, its libc, its linker and the mingw-w64/UCRT headers are one checksummed archive, so no runner image, vcvars or VS install takes part in the result"
-    - "-mcpu=x86_64_v3 for the whole build, where upstream's Makefile.wnm has no architecture flag at all"
-    - "-O2 -DNDEBUG matches Makefile.wnm's /O2 /D NDEBUG; /arch:AVX2 on the MSVC reference build means the same v3 feature level"
-    - "defines.wn is copied to defines.h as Makefile.wnm does, and -DMINGW selects its own mingw branches: no <values.h>, a real unistd.h, a C99 snprintf"
-    - "-DUSE_REGEXP_C selects the vendored regexp.c, which is what Makefile.wnm gets by default under MSVC and what makes search.c provide regerror()"
-    - "-s drops debug info; it also stops zig from adding a PDB whose identifier changes with the build directory"
-    - "release tarball only: lesskey.exe is built by Makefile.aut on Unix, and the reference Windows package ships less.exe alone"
+    - "Built with `zig cc` instead of MSVC; the result still targets the UCRT and imports no mingw runtime DLL."
 
 stage:
   - from: ${out}

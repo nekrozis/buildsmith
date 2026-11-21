@@ -40,20 +40,14 @@ build:
     _LINK_: "/INCREMENTAL:NO /OPT:REF,ICF /Brepro"
     ZIG_TARGET: x86_64-windows-msvc
     ZIG_CPU: x86_64_v3
+  # Upstream's megasource CMake adds /MP (and /arch:SSE on 32-bit) only, and
+  # installs msvcp*.dll via InstallRequiredSystemLibraries. Its LuaJIT is the
+  # vendored tree built by MSVC; /fp:precise is the MSVC default on both sides.
+  # The LuaJIT pin is openresty/luajit2@93162f3, the tree Debian trixie ships.
   overrides:
-    - "MSVC /arch:AVX2 (x86-64-v3) for all CMake-built modules; upstream Windows builds use the baseline SSE2 target"
-    - "dynamic CRT (/MD) and no CRT files in the archive: target machines need the matching VC++ Redistributable"
-    - "no /fp:fast; the MSVC default /fp:precise is kept for Lua and Box2D floating-point behavior"
-    - "MSVC /GL and /LTCG are enabled for CMake-built code"
-    - "LuaJIT, SDL2, mpg123 and OpenAL Soft stay DLLs; zlib, libogg, libvorbis, libtheora, FreeType and libmodplug are linked into love.dll"
-    - "the megasource 11.5 layout already provides the intended 2+2 split; only the LuaJIT-prebuilt and OpenAL native-tools CMake fixes are patched"
-    - "LuaJIT comes from openresty/luajit2 @ 93162f3 (v2.1-agentzh, merge dated 2025-01-17), the tree Debian trixie ships as 2.1.0+openresty20250117; the pin was verified by diffing the Debian orig tarball against the commit (doc/ excluded)"
-    - "the LuaJIT pin follows the luajit source version in Debian stable main (not backports, sid or testing): a new snapshot moves the commit, and a revision-only bump is re-checked for security patches"
-    - "LuaJIT is compiled by zig cc for the msvc target (-mcpu=x86_64_v3 -O2 -DNDEBUG): clang generates the same code for the same input, which the MSVC backend does not; zig uses the runner's MSVC headers and CRT, so this part is not hermetic"
-    - "the LuaJIT version string is 2.1.<commit time>: the fork ships .relver as an unexpanded $Format:%ct$ placeholder, so the build writes luajit_relver.txt from the pinned commit"
-    - "LuaJIT is consumed as prebuilt lua51.lib/lua51.dll/include via MEGA_LUAJIT_PREBUILT_DIR; its sources are not integrated into love.dll"
-    - "with /GL and /LTCG, /experimental:deterministic is passed to the linker as well as the compiler; the flag is undocumented, but link-time code generation was where rebuilds diverged"
-    - "the package is amd64v3 because love.dll and the CMake-built DLLs use /arch:AVX2; LuaJIT is compiled with -mcpu=x86_64_v3, the same v3 feature level"
+    - "`/GL` + `/LTCG` for CMake-built code; upstream's release build does not enable link-time code generation."
+    - "The VC++ runtime is not bundled (upstream ships `msvcp*.dll`); install the matching Redistributable."
+    - "LuaJIT comes from `openresty/luajit2@93162f3` and is built with `zig cc`; upstream builds its vendored LuaJIT with MSVC."
 
 stage:
   - from: ${out}/bin

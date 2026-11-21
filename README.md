@@ -78,4 +78,12 @@ and the index refresh job, and the `release` environment only on the publish job
   bump, not an automatic rebuild.
 - `distribution: private-only` packages are excluded from the index and cannot
   be published (`aseprite` is one, see `docs/publishing.md`).
+- Repository-wide policies are stated once, never per recipe: the `amd64v3`
+  target (`docs/targets.md`), the determinism flags (`docs/reproducibility.md`),
+  toolchain pinning, and the injected Rust `[profile.make]` (`lto = "fat"`,
+  `codegen-units = 1`, `strip = "debuginfo"`). C++/MSVC optimisation follows
+  upstream by default; a recipe that enables more (`/GL` + `/LTCG`) records the
+  difference in `overrides`, and one that cannot adds the reason to `notes`.
+  `overrides` otherwise lists only user-facing differences from the upstream
+  build.
 

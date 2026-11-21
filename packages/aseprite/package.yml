@@ -42,13 +42,14 @@ build:
     msvc: "18"
   env:
     _LINK_: "/INCREMENTAL:NO /OPT:REF,ICF /Brepro"
+  # The static /MT CRT and the aseprite/skia prebuilt library match upstream:
+  # CMakeLists.txt sets CMAKE_MSVC_RUNTIME_LIBRARY, and laf/misc/skia-url.sh
+  # fetches the same asset. Optimisation lives in CMAKE_C_FLAGS_RELEASE rather
+  # than CL/_CL_ because those also hit CMake's try-compiles and collide with
+  # /RTC1. OpenSSL is disabled, not deleted; dumpbin fails the build if
+  # libcrypto/libssl still shows up.
   overrides:
-    - "MSVC /arch:AVX2 (implies AVX/SSE4.2 and enables FMA), static /MT CRT"
-    - "optimisation lives in CMAKE_C_FLAGS_RELEASE/CMAKE_CXX_FLAGS_RELEASE, not in CL/_CL_: those also hit CMake's configure-time try-compiles and collide with /RTC1"
-    - "LAF_BACKEND=skia with the pinned aseprite/skia prebuilt library"
-    - "Sentry, news, updater and DRM disabled"
-    - "whole-program optimisation (/GL + /LTCG) is off: it inflates app-lib.lib past lib.exe's 4 GiB archive limit (LNK1248) with MSVC 14.51 on windows-2025-vs2026"
-    - "OpenSSL is disabled rather than deleted from the runner: the system copy under C:/Program Files is never found (CMAKE_DISABLE_FIND_PACKAGE_OpenSSL), and dumpbin /dependents fails the build if libcrypto/libssl still shows up in the exe"
+    - "News and update checks are disabled; upstream's CMake defaults enable both."
 
 stage:
   - from: ${out}
@@ -59,7 +60,7 @@ smoke:
 
 reproducibility:
   level: L2
-  ab: false
+  ab: true
   cross_env: false
   verified_on: [windows-2025]
 
@@ -68,4 +69,5 @@ notes: >-
   The Aseprite EULA allows building from source for personal use but does not
   permit redistributing compiled binaries. This recipe is kept so the build can
   be reproduced locally; it is excluded from the public index and must not be
-  published to any mirror.
+  published to any mirror. Built without /GL + /LTCG: whole-program
+  optimisation pushes app-lib.lib past lib.exe's 4 GiB archive limit (LNK1248).

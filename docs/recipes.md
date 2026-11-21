@@ -37,8 +37,8 @@ build:
     # with the runner image.
   env:                        # exported to the build script
     GOAMD64: v3
-  overrides:                  # documented deviations from upstream defaults
-    - "GOAMD64=v3, upstream goreleaser builds windows/amd64 with the default v1"
+  overrides:                  # user-facing differences from the upstream build
+    - "/GL + /LTCG; upstream's release build does not enable link-time code generation"
   source_date_epoch: 1704164645   # optional; otherwise the pinned commit time
 
 stage:
@@ -61,6 +61,23 @@ conflicts: []
 notes: |
   Free-form text that ends up in the manifest and the index.
 ```
+
+## Overrides
+
+`overrides` is rendered into the release notes, so every entry must be a
+user-facing difference and must name both sides: what this package does, and
+what the upstream build does. A fact that cannot name the upstream side is not a
+difference — keep it in a YAML comment or in `notes`.
+
+Repository-wide policies are not repeated here: the `amd64v3` target
+(`targets.md`), the determinism flags (`reproducibility.md`), toolchain
+pinning, the injected Rust `[profile.make]`, and the archive layout apply to
+every package. A package-level exception to one of those defaults belongs in the
+recipe's `notes`, not in this document.
+
+Rust LTO is a repository convention. C++/MSVC optimisation follows upstream by
+default: a recipe that adds `/GL` + `/LTCG` records the difference in
+`overrides`, and a recipe that cannot adds the reason to `notes`.
 
 ## Placeholders
 
