@@ -37,20 +37,23 @@ smoke:
   - [bin/wasmtime.exe, --version]
 
 reproducibility:
-  level: L0
+  level: L2
   ab: true
   cross_env: false
-  verified_on: []
+  verified_on: [windows-2025]
 
 distribution: allowed
 runtime: "Static CRT; no Visual C++ Redistributable required."
 
 notes: >-
-  Builds the wasmtime CLI with the upstream release feature set
-  (all-arch, component-model, gdbstub plus run). The profile is lto=thin with
-  codegen-units=1; upstream builds the CLI with the default release profile
-  (no LTO, 16 codegen units) because Windows CI is its bottleneck. Static CRT,
-  panic=abort and strip=debuginfo match the upstream release build. The default
+  Builds the wasmtime CLI with all-arch, component-model and run. The profile
+  is lto=fat with codegen-units=1, the same shape as upstream's own
+  fastest-runtime profile and Homebrew's build; upstream's Windows release
+  keeps the default release profile (no LTO, 16 codegen units) because CI time
+  is its bottleneck. gdbstub is not enabled, matching the distribution
+  packages (Arch, Homebrew, Alpine, Nixpkgs all build default features), so
+  wasmtime run -g is unavailable. Static CRT, panic=abort and strip=debuginfo
+  match the upstream release build. The default
   features pull four C libraries — ring, zstd, capstone and ittapi — which are
   compiled with MSVC here; ring links the COFF objects it ships pregenerated
   instead of assembling them, so no nasm or perl is involved.
