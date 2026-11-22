@@ -566,6 +566,55 @@
         }
       ],
       "summary": "A complete, self-contained TeX/LaTeX engine"
+    },
+    "wasmtime": {
+      "conflicts": [],
+      "depends": [],
+      "distribution": "allowed",
+      "homepage": "https://wasmtime.dev/",
+      "latest": "51.0.0-1",
+      "license": "Apache-2.0 WITH LLVM-exception",
+      "notes": "Builds the wasmtime CLI with all-arch, component-model and run. The profile is lto=fat with codegen-units=1, the same shape as upstream's own fastest-runtime profile and Homebrew's build; upstream's Windows release keeps the default release profile (no LTO, 16 codegen units) because CI time is its bottleneck. gdbstub is not enabled, matching the distribution packages (Arch, Homebrew, Alpine, Nixpkgs all build default features), so wasmtime run -g is unavailable. Static CRT, panic=abort and strip=debuginfo match the upstream release build. The default features pull four C libraries — ring, zstd, capstone and ittapi — which are compiled with MSVC here; ring links the COFF objects it ships pregenerated instead of assembling them, so no nasm or perl is involved.",
+      "provides": [],
+      "releases": [
+        {
+          "arch": "amd64v3",
+          "full": "51.0.0-1",
+          "manifest_sha256": "43b428e7aaf04da8778b3e5aaa4361737657270e0fd2517646d8260ccc994141",
+          "manifest_url": "https://github.com/nekrozis/buildsmith/releases/download/wasmtime/v51.0.0-1/wasmtime-51.0.0-1-amd64v3.manifest.json",
+          "pkgrel": 1,
+          "pkgver": "51.0.0",
+          "provenance": null,
+          "reproducibility": {
+            "ab": "same-image",
+            "ab_sha256": [
+              "3af724a13290970b08d072a7b7d357db24d116b433940ef21f9da41a9f68ae5d",
+              "3af724a13290970b08d072a7b7d357db24d116b433940ef21f9da41a9f68ae5d"
+            ],
+            "ab_verified": true,
+            "cross_env": false,
+            "level": "L2",
+            "verified_on": [
+              "windows-2025"
+            ]
+          },
+          "sha256": "3af724a13290970b08d072a7b7d357db24d116b433940ef21f9da41a9f68ae5d",
+          "size": 13472129,
+          "source_date_epoch": 1795190272,
+          "tag": "wasmtime/v51.0.0-1",
+          "toolchain": {
+            "go": null,
+            "msvc": "18",
+            "msvc_toolset": "14.52.37025",
+            "runner": "windows-2025",
+            "runner_image": "20261116.315.1",
+            "rust": "1.100.0",
+            "zig": null
+          },
+          "url": "https://github.com/nekrozis/buildsmith/releases/download/wasmtime/v51.0.0-1/wasmtime-51.0.0-1-amd64v3.zip"
+        }
+      ],
+      "summary": "Standalone WebAssembly runtime with a CLI"
     }
   },
   "repository": {
