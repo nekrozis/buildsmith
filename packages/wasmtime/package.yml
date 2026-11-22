@@ -28,6 +28,9 @@ build:
     RUSTFLAGS: "-C target-cpu=x86-64-v3 -C target-feature=+crt-static"
     _CL_: "/arch:AVX2 /O2 /Ob2 /DNDEBUG /Brepro"
     _LINK_: "/INCREMENTAL:NO /OPT:REF,ICF /Brepro"
+  overrides:
+    - "`gdbstub` is not enabled, so `wasmtime run -g` is unavailable; upstream's GitHub binaries include it"
+    - "lto=fat with codegen-units=1, the shape of upstream's fastest-runtime profile; upstream's Windows release uses the default release profile (no LTO, 16 codegen units)"
 
 stage:
   - from: ${out}
