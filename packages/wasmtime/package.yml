@@ -1,5 +1,5 @@
 name: wasmtime
-summary: Placeholder recipe used to exercise CI from other branches
+summary: Standalone WebAssembly runtime with a CLI
 homepage: https://wasmtime.dev/
 license: Apache-2.0 WITH LLVM-exception
 
@@ -10,8 +10,6 @@ version:
 arch: [amd64v3]
 
 sources:
-  # Pinned at the current upstream release so the source plumbing matches a
-  # real package; the build script does not use it yet.
   - type: git
     url: https://github.com/bytecodealliance/wasmtime.git
     tag: v${pkgver}
@@ -22,23 +20,37 @@ build:
   script: build.ps1
   shell: pwsh
   runner: windows-2025
-  toolchain: {}
+  toolchain:
+    rust: "1.100.0"
+    msvc: "18"
+  env:
+    RUSTUP_TOOLCHAIN: "1.100.0"
+    RUSTFLAGS: "-C target-cpu=x86-64-v3 -C target-feature=+crt-static"
+    _CL_: "/arch:AVX2 /O2 /Ob2 /DNDEBUG /Brepro"
+    _LINK_: "/INCREMENTAL:NO /OPT:REF,ICF /Brepro"
 
 stage:
   - from: ${out}
     to: bin
 
-smoke: []
+smoke:
+  - [bin/wasmtime.exe, --version]
 
 reproducibility:
   level: L0
-  ab: false
+  ab: true
   cross_env: false
   verified_on: []
 
-distribution: private-only
+distribution: allowed
+runtime: "Static CRT; no Visual C++ Redistributable required."
 
 notes: >-
-  Placeholder. Exists so the CI workflow can be dispatched from branches
-  without building anything real. build.ps1 only stages a marker file; replace
-  it, and the stage/smoke entries, when the package is implemented.
+  Builds the wasmtime CLI with the upstream release feature set
+  (all-arch, component-model, gdbstub plus run). The profile is lto=thin with
+  codegen-units=1; upstream builds the CLI with the default release profile
+  (no LTO, 16 codegen units) because Windows CI is its bottleneck. Static CRT,
+  panic=abort and strip=debuginfo match the upstream release build. The default
+  features pull four C libraries — ring, zstd, capstone and ittapi — which are
+  compiled with MSVC here; ring links the COFF objects it ships pregenerated
+  instead of assembling them, so no nasm or perl is involved.
