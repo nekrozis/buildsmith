@@ -11,7 +11,7 @@ debug = false
 strip = "debuginfo"
 debug-assertions = false
 overflow-checks = false
-lto = "thin"
+lto = "fat"
 panic = "abort"
 incremental = false
 codegen-units = 1
@@ -27,14 +27,8 @@ if ($LASTEXITCODE -ne 0) { throw "cargo failed with exit code $LASTEXITCODE" }
 cargo fetch --locked --target x86_64-pc-windows-msvc
 if ($LASTEXITCODE -ne 0) { throw "cargo fetch failed with exit code $LASTEXITCODE" }
 
-# The gdbstub feature embeds a wasm32-wasip2 component that a nested cargo
-# invocation builds; std for that target is not part of the toolchain install.
-rustup target add wasm32-wasip2
-if ($LASTEXITCODE -ne 0) { throw "rustup target add failed with exit code $LASTEXITCODE" }
-
-# The same feature set the upstream release artifacts use.
 cargo build --profile make --frozen -p wasmtime-cli `
-  --features all-arch,component-model,gdbstub,run
+  --features all-arch,component-model,run
 if ($LASTEXITCODE -ne 0) { throw "cargo build failed with exit code $LASTEXITCODE" }
 
 New-Item -ItemType Directory -Force $env:PKG_OUT_DIR | Out-Null
