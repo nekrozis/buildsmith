@@ -2,6 +2,14 @@ $ErrorActionPreference = 'Stop'
 
 Set-Location (Join-Path $env:PKG_SRC_DIR 'wasmtime')
 
+# Cranelift generates Rust sources at build time and the panic locations of
+# that generated code embed the absolute output path. The A/B legs build in
+# different work directories, so remap the prefixes the same way the other
+# Rust recipes do.
+$env:RUSTFLAGS = "$env:RUSTFLAGS " +
+  "--remap-path-prefix=$env:PKG_SRC_DIR=/_/src " +
+  "--remap-path-prefix=$env:PKG_WORK_DIR=/_/work"
+
 @'
 
 [profile.make]
