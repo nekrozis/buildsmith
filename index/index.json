@@ -295,7 +295,7 @@
       "homepage": "https://love2d.org",
       "latest": "11.5-3",
       "license": "zlib",
-      "notes": "LÖVE 11.5, built from the 11.5 tags of love and megasource. LuaJIT, SDL2, mpg123 and OpenAL Soft are shipped as DLLs; zlib, libogg, libvorbis, libtheora, FreeType and libmodplug are linked into love.dll. LuaJIT is built separately with msvcbuild.bat using the same base flags, then fed to the build as a prebuilt lua51.lib/lua51.dll. The Microsoft VC++ runtime is not bundled; install the matching VC++ Redistributable. license.txt is included; mpg123 (LGPL-2.1) and OpenAL Soft (LGPL-2.0+) remain separate DLLs. L0: A/B is disabled because the separate LuaJIT build is not byte-reproducible.",
+      "notes": "LÖVE 11.5, built from the 11.5 tags of love and megasource. LuaJIT, SDL2, mpg123 and OpenAL Soft are shipped as DLLs; zlib, libogg, libvorbis, libtheora, FreeType and libmodplug are linked into love.dll. LuaJIT comes from openresty/luajit2 at the Debian stable snapshot and is compiled with zig cc, then fed to the build as a prebuilt lua51.lib/lua51.dll. The Microsoft VC++ runtime is not bundled; install the matching VC++ Redistributable. license.txt is included; mpg123 (LGPL-2.1) and OpenAL Soft (LGPL-2.0+) remain separate DLLs.",
       "provides": [],
       "releases": [
         {
