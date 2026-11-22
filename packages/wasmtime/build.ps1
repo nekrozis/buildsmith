@@ -27,6 +27,11 @@ if ($LASTEXITCODE -ne 0) { throw "cargo failed with exit code $LASTEXITCODE" }
 cargo fetch --locked --target x86_64-pc-windows-msvc
 if ($LASTEXITCODE -ne 0) { throw "cargo fetch failed with exit code $LASTEXITCODE" }
 
+# The gdbstub feature embeds a wasm32-wasip2 component that a nested cargo
+# invocation builds; std for that target is not part of the toolchain install.
+rustup target add wasm32-wasip2
+if ($LASTEXITCODE -ne 0) { throw "rustup target add failed with exit code $LASTEXITCODE" }
+
 # The same feature set the upstream release artifacts use.
 cargo build --profile make --frozen -p wasmtime-cli `
   --features all-arch,component-model,gdbstub,run
