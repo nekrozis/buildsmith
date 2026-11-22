@@ -1,0 +1,15 @@
+# Normalise line endings in the working tree. Manifest fingerprints
+# (build.recipe_sha256, build.script_sha256, build.files) hash the bytes on
+# disk, so a checkout with different EOL settings would otherwise describe the
+# same commit differently.
+* text=auto eol=lf
+
+# Keep binary inputs byte-exact.
+*.png binary
+*.ico binary
+*.zip binary
+*.exe binary
+*.dll binary
+*.lib binary
+*.ttf binary
+*.otf binary

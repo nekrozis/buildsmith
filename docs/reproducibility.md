@@ -102,13 +102,16 @@ Every archive ships next to a `<archive>.manifest.json` containing:
 `provides`, `conflicts`, `version{pkgver,pkgrel,full}`, `arch`,
 `archive{file,format,root,size,sha256}`, `files[{path,size,sha256,mode}]`,
 `sources[{type,url,tag,commit,sha256}]`,
-`build{script,shell,runner,recipe_sha256,script_sha256,env,overrides}`,
+`build{script,shell,runner,recipe_sha256,script_sha256,files,env,overrides}`,
 `toolchain{go,rust,msvc,zig,runner,runner_image}`,
 `reproducibility{level,ab,ab_verified,ab_sha256,cross_env,verified_on}`,
 `source_date_epoch`, and `provenance` when an attestation was attached.
 
 `recipe_sha256` and `script_sha256` matter: they let you tell "same recipe" from
-"same version, different build" without trusting the git tag.
+"same version, different build" without trusting the git tag. `build.files`
+carries the digest of every file a recipe keeps in `files/` — patches, overlay
+triplets, anything the script reads from there — because those are build inputs
+that the recipe hash alone does not cover.
 
 `toolchain.runner_image` is the `ImageVersion` environment variable of the
 runner, i.e. the actual image build the artifact came from. For MSVC packages

@@ -286,6 +286,28 @@ class ToolchainTest(PkgctlTestCase):
 
 
 class PackagingTest(PkgctlTestCase):
+    def test_manifest_fingerprints_the_files_directory(self):
+        source, commit = self.make_source_repo()
+        directory = self.write_recipe(commit=commit, source_url=str(source))
+        _, out = self.build_and_package()
+        manifest = json.loads(
+            (out / "demo-1.0.0-1-amd64v3.manifest.json").read_text(encoding="utf-8")
+        )
+        # No files/ directory yet: the fingerprint is empty, not missing.
+        self.assertEqual(manifest["build"]["files"], {})
+
+        patches = directory / "files"
+        patches.mkdir()
+        (patches / "fix.patch").write_text("--- a\n+++ b\n", encoding="utf-8")
+        _, out = self.build_and_package(out=self.tmp / "dist" / "second")
+        manifest = json.loads(
+            (out / "demo-1.0.0-1-amd64v3.manifest.json").read_text(encoding="utf-8")
+        )
+        self.assertEqual(
+            manifest["build"]["files"],
+            {"fix.patch": sha256_file(patches / "fix.patch")},
+        )
+
     def test_roundtrip_build_package_verify(self):
         source, commit = self.make_source_repo()
         self.write_recipe(commit=commit, source_url=str(source))
@@ -623,6 +645,57 @@ class NotesTest(PkgctlTestCase):
 
 
 class IndexTest(PkgctlTestCase):
+    def write_index_manifest(self, directory, pkgrel, summary):
+        full = f"1.0.0-{pkgrel}"
+        manifest = {
+            "schema": 1,
+            "name": "demo",
+            "summary": summary,
+            "homepage": "https://example.invalid/demo",
+            "license": "MIT",
+            "distribution": "allowed",
+            "notes": f"notes for {full}",
+            "depends": [],
+            "provides": [],
+            "conflicts": [],
+            "version": {"pkgver": "1.0.0", "pkgrel": pkgrel, "full": full},
+            "arch": "amd64v3",
+            "archive": {
+                "file": f"demo-{full}-amd64v3.zip",
+                "format": "zip",
+                "root": "demo",
+                "size": 1,
+                "sha256": "a" * 64,
+            },
+            "files": [],
+            "sources": [],
+            "build": {},
+            "toolchain": {},
+            "reproducibility": {},
+            "source_date_epoch": 1704164645,
+        }
+        path = directory / f"demo-{full}-amd64v3.manifest.json"
+        path.write_text(json.dumps(manifest), encoding="utf-8")
+        return path
+
+    def test_index_describes_the_package_with_its_newest_release(self):
+        manifests = self.tmp / "manifests"
+        manifests.mkdir()
+        # The oldest release sorts first by file name; the package fields must
+        # still come from the newest release.
+        self.write_index_manifest(manifests, 1, "old summary")
+        self.write_index_manifest(manifests, 3, "new summary")
+        out = self.tmp / "index.json"
+        self.pkgctl("index", "--manifests", str(manifests), "--out", str(out),
+                    "--repo", "nekrozis/buildsmith")
+        document = json.loads(out.read_text(encoding="utf-8"))
+        package = document["packages"]["demo"]
+        self.assertEqual(package["summary"], "new summary")
+        self.assertEqual(package["notes"], "notes for 1.0.0-3")
+        self.assertEqual(package["latest"], "1.0.0-3")
+        self.assertEqual([release["full"] for release in package["releases"]],
+                         ["1.0.0-3", "1.0.0-1"])
+
     def make_manifests(self):
         source, commit = self.make_source_repo()
         self.write_recipe(commit=commit, source_url=str(source))
