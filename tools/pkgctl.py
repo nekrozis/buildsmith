@@ -112,6 +112,17 @@ def sha256_file(path):
     return digest.hexdigest()
 
 
+def fingerprint_tree(directory):
+    """sha256 of every file below directory, keyed by its relative path."""
+    if not directory.is_dir():
+        return {}
+    return {
+        path.relative_to(directory).as_posix(): sha256_file(path)
+        for path in sorted(directory.rglob("*"))
+        if path.is_file()
+    }
+
+
 def render(value, variables):
     if not isinstance(value, str):
         return value
@@ -792,6 +803,10 @@ def cmd_package(args):
             "runner": recipe["build"]["runner"],
             "recipe_sha256": sha256_file(recipe.path),
             "script_sha256": sha256_file(recipe.dir / recipe["build"]["script"]),
+            # Patches, overlay triplets and anything else the script reads from
+            # files/ are build inputs too; a recipe hash alone would not notice
+            # a changed patch.
+            "files": fingerprint_tree(recipe.dir / "files"),
             "env": {str(key): str(value) for key, value in (recipe["build"].get("env") or {}).items()},
             "overrides": recipe["build"].get("overrides", []),
         },
@@ -1131,48 +1146,57 @@ def cmd_index(args):
             return f"https://github.com/{args.repo}/releases/download/{tag}/{file_name}"
         return f"{args.base_url.rstrip('/')}/{file_name}"
 
-    packages = {}
+    # Group first, then take the package-level fields from the newest manifest.
+    # Reading them from whichever file the directory glob returned first would
+    # describe the package with its oldest release.
+    grouped = {}
     for path, manifest in entries:
         name = manifest["name"]
-        package = packages.setdefault(
-            name,
-            {
-                "summary": manifest["summary"],
-                "homepage": manifest["homepage"],
-                "license": manifest["license"],
-                "distribution": manifest["distribution"],
-                "notes": manifest.get("notes"),
-                "depends": manifest.get("depends", []),
-                "provides": manifest.get("provides", []),
-                "conflicts": manifest.get("conflicts", []),
-                "releases": [],
-            },
-        )
         tag = f"{manifest['name']}/v{manifest['version']['full']}"
-        package["releases"].append(
-            {
-                "pkgver": manifest["version"]["pkgver"],
-                "pkgrel": manifest["version"]["pkgrel"],
-                "full": manifest["version"]["full"],
-                "arch": manifest["arch"],
-                "tag": tag,
-                "url": location(tag, manifest["archive"]["file"]),
-                "size": manifest["archive"]["size"],
-                "sha256": manifest["archive"]["sha256"],
-                "manifest_url": location(tag, path.name),
-                "manifest_sha256": sha256_file(path),
-                "source_date_epoch": manifest.get("source_date_epoch"),
-                "toolchain": manifest.get("toolchain", {}),
-                "reproducibility": manifest.get("reproducibility", {}),
-                "provenance": manifest.get("provenance"),
-            }
+        sort_key = (
+            natural_key(manifest["version"]["pkgver"]),
+            manifest["version"]["pkgrel"],
+            manifest["arch"],
+        )
+        grouped.setdefault(name, []).append(
+            (
+                sort_key,
+                {
+                    "pkgver": manifest["version"]["pkgver"],
+                    "pkgrel": manifest["version"]["pkgrel"],
+                    "full": manifest["version"]["full"],
+                    "arch": manifest["arch"],
+                    "tag": tag,
+                    "url": location(tag, manifest["archive"]["file"]),
+                    "size": manifest["archive"]["size"],
+                    "sha256": manifest["archive"]["sha256"],
+                    "manifest_url": location(tag, path.name),
+                    "manifest_sha256": sha256_file(path),
+                    "source_date_epoch": manifest.get("source_date_epoch"),
+                    "toolchain": manifest.get("toolchain", {}),
+                    "reproducibility": manifest.get("reproducibility", {}),
+                    "provenance": manifest.get("provenance"),
+                },
+                manifest,
+            )
         )
 
-    for package in packages.values():
-        package["releases"].sort(
-            key=lambda item: (natural_key(item["pkgver"]), item["pkgrel"], item["arch"]), reverse=True
-        )
-        package["latest"] = package["releases"][0]["full"]
+    packages = {}
+    for name, items in grouped.items():
+        items.sort(key=lambda item: item[0], reverse=True)
+        newest = items[0][2]
+        packages[name] = {
+            "summary": newest["summary"],
+            "homepage": newest["homepage"],
+            "license": newest["license"],
+            "distribution": newest["distribution"],
+            "notes": newest.get("notes"),
+            "depends": newest.get("depends", []),
+            "provides": newest.get("provides", []),
+            "conflicts": newest.get("conflicts", []),
+            "releases": [item[1] for item in items],
+            "latest": items[0][1]["full"],
+        }
 
     document = {
         "schema": SCHEMA,
