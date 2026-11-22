@@ -56,8 +56,11 @@ jobs:
             echo "index is up to date"
             exit 0
           fi
-          git config user.name "buildsmith"
-          git config user.email "buildsmith@users.noreply.github.com"
+          # Commit as the GitHub Actions bot. A plain "buildsmith" identity
+          # resolves to a real, unrelated account of that name on GitHub, and
+          # the commits were attributed to it.
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add index/index.json
           git commit -m "index: refresh from published releases"
           git push
